@@ -22,7 +22,10 @@
 
 ## 4. 可交互演示入口
 
-待补充Figma演示链接及嵌入配置。
+[打开可交互原型](https://www.figma.com/proto/8aE2Z9hUhKtxgXjnEuCY7I?node-id=3-4&page-id=2%3A2&starting-point-node-id=3%3A4&scaling=scale-down&content-scaling=fixed)
+
+默认入口：01-02 月历·空态。
+双栏工作台嵌入配置：待完成。
 
 ## 5. 配套文档
 
