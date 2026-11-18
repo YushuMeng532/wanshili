@@ -1,96 +1,40 @@
-# 万事历｜月历与当天事项 Dev Spec
+# 万事历 MVP Dev Spec
+V0.2 · 2026-11-18 · 待实现契约
 
-文档状态：技术草案，待开发确认
-版本：V0.1
-对应需求：同目录 prd.md
-对应页面规则：同目录 page-design.md
+## 1. 页面与职责
 
-## 1. 模块职责
+逻辑页面calendar、event/new、event/:id、statistics，作为设计映射。Repository统一读写；RecurrenceService生成计划；SummaryService计算合计。初版本地存储适配器，后续可替换云端。
 
-- 生成指定月份的日历。
-- 展示日期对应的事项标记。
-- 根据选中日期查询当天事项。
-- 控制当天事项面板的打开与关闭。
-- 将选中日期传递给新增事项流程。
+## 2. 数据结构
 
-## 2. 页面状态
+| 对象 | 字段 |
+| --- | --- |
+| Event | id、title、type、date、calendarType、recurrence、endCondition、aiIncluded、createdAt、updatedAt |
+| Recurrence | frequency、weekdays、monthDay、yearMonth、yearDay |
+| DailyRecord | eventId、date、status(occurred/not_occurred)、note、createdAt、updatedAt |
+| Settings | aiEnabled=false、schemaVersion |
+| HolidayCalendar | year、date、isWorkday、source、version |
 
-| 字段 | 含义 | 初始值 |
-|---|---|---|
-| visibleMonth | 当前查看月份，YYYY-MM | 用户本地当前月份 |
-| selectedDate | 当前选中日期，YYYY-MM-DD | 用户本地今天 |
-| isDayPanelOpen | 当天事项面板是否打开 | false |
-| loadStatus | idle / loading / success / error | idle |
-| errorMessage | 读取失败的提示信息 | 空 |
+eventId+date唯一；无记录代表未记录。日期YYYY-MM-DD，时间戳独立；保留生日原历法日期，换算可重算。特殊日期策略待确认。
 
-切换月份仅更新查看月份并关闭当天事项面板；
-选中日期在点击新日期时更新。
-点击“今天”时，将查看月份和选中日期恢复为今天。
+## 3. 保存与修改
 
-## 3. 日历生成规则
+内部契约：saveEvent、saveRecord、deleteOccurrence、getOccurrences、getMonthSummary。具体HTTP接口在接后端时定义。
 
-- 一周从周一开始。
-- 根据指定年月计算当月天数及首日星期。
-- 日期编号必须与实际日期对应。
-- 日期只包含年月日，使用YYYY-MM-DD格式。
-- “今天”按用户设备本地日期计算。
-- 日期计算使用日历日期运算，避免将一天固定换算为24小时。
-- 相邻月份补位格的展示和点击规则待确认。
-- 中国节假日与调休数据的来源及更新机制待确认。
+校验必填后提交；保存中阻止重复提交，持久化成功再反馈。失败保留表单及旧数据；迁移失败不得清空数据。单次循环修改用例外覆盖；系列修改与历史处理按确认后的PRD执行。
 
-## 4. 当天事项展示数据
+## 4. 循环与统计
 
-以下为月历模块需要的展示结构，
-完整事项模型由新增与编辑事项模块定义。
+计划实例与实际记录分开生成及合并。缺年份假调休表返回明确错误；特殊月日及农历规则确认前不静默代算。
 
-| 字段 | 类型 | 含义 |
-|---|---|---|
-| occurrenceId | string | 某事项在某日期的实例标识 |
-| eventId | string | 关联的事项标识 |
-| date | string | 该实例所属日期 |
-| title | string | 事项名称 |
-| type | enum | countup / countdown / birthday |
-| dayLabel | string | 根据事项规则计算的天数展示文案 |
+按事项：筛选当月occurred后对date取集合。按类型：关联Event类型后对date取集合。全月：所有occurred日期并集，各类型不能直接相加。未记录从截至今天的计划实例缺确认记录推导，保留事项级明细。
 
-- 同一天可以返回多个事项实例。
-- 循环事项需要结合循环规则及例外记录计算当天实例。
-- dayLabel动态计算，避免日期变化后展示过期天数。
-- 天数起算方式、生日农历规则由对应事项模块定义。
+原始记录改动后重算受影响月份。跨度与倒数按日历日期差计算，与实际统计独立。
 
-## 5. 数据访问约定
+## 5. AI范围
 
-先定义模块调用边界，具体使用本地存储或服务端接口待确认。
+先查全局，再筛aiIncluded。排除项名称、备注及历史未来记录均不传入。全局关闭保留单事项偏好。确认建议时复查已有记录，不能静默覆盖。
 
-| 方法 | 输入 | 输出 |
-|---|---|---|
-| getMonthOccurrences | 指定月份 | 按日期分组的事项实例 |
-| getDayOccurrences | 指定日期 | 当天事项实例数组 |
+## 6. 验证
 
-- 页面通过统一数据访问层读取数据。
-- 读取成功且返回空数组时展示空态。
-- 读取失败时展示错误与重试入口。
-- 读取失败不得清空已有数据。
-- 快速切换日期时，仅展示最后一次选择对应的数据。
-- 新增、修改或删除事项成功后，刷新受影响的月历与当天列表。
-
-## 6. 主要状态流转
-
-打开页面：
-初始化日期 → 读取当月数据 → 展示月历或读取异常。
-
-点击日期：
-更新选中日期 → 打开面板 → 读取并展示当天事项。
-
-关闭面板：
-隐藏面板 → 保留查看月份和选中日期。
-
-点击新增：
-将selectedDate传给新增事项流程。
-
-## 7. 待确认技术事项
-
-- 前端技术栈。
-- 数据持久化方案。
-- 日期计算及农历转换方案。
-- 节假日与调休数据来源。
-- 事项排序和日期标记溢出规则。
+见[验证](./validation.md)。当前为技术契约，尚未作为产品功能验证通过。
