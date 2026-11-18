@@ -1,0 +1,123 @@
+(()=>{'use strict';
+const colors={up:['#747a58','#eef2e7'],down:['#54758a','#eaf3f9'],birthday:['#8f6a76','#f8edf1']};
+const paths={book:'M3 4c4-2 7-1 9 1 2-2 5-3 9-1v15c-4-2-7-1-9 1-2-2-5-3-9-1Z M12 5v15',cal:'M4 5h16v16H4Z M4 9h16 M8 2v5 M16 2v5',repeat:'M20 7a8 8 0 0 0-14-2L3 8 M3 3v5h5 M4 17a8 8 0 0 0 14 2l3-3 M21 21v-5h-5',flag:'M5 21V3c5-3 9 3 14 0v10c-5 3-9-3-14 0',gift:'M3 8h18v4H3Z M5 12v9h14v-9 M12 8v13 M12 8C3 8 6 0 10 4Z M12 8c9 0 6-8 2-4Z',note:'M5 3h14v18H5Z M8 8h8 M8 12h8 M8 16h5',spark:'m12 2 3 7 7 3-7 3-3 7-3-7-7-3 7-3Z'};
+function icon(n){return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="'+paths[n]+'"/></svg>'}
+function row(label,value,ico='cal',arrow=true){return '<div class="row">'+icon(ico)+'<span class="label">'+label+'</span><span class="value">'+value+'</span>'+(arrow?'<span class="chev">›</span>':'')+'</div>'}
+function ai(){return '<div class="ai">'+icon('spark')+'<div><b>参与 AI 习惯分析</b><div class="helper">开启后用于漏记提醒，建议需你确认</div></div><div class="toggle"></div></div>'}
+function base(title,body,button='保存',type='up',navRight='取消'){return '<div class="status"><span>9:41</span><span>● ▰</span></div><div class="nav"><span class="back">‹</span><b>'+title+'</b><span class="plain">'+navRight+'</span></div>'+body+(button?'<div class="foot"><div class="btn">'+button+'</div></div>':'')+'<div class="homebar"></div>'}
+function tabs(type){return '<div class="tabs">'+[['up','正计时'],['down','倒数日'],['birthday','生日']].map(([k,v])=>'<div class="tab '+(k===type?'on':'')+'">'+v+'</div>').join('')+'</div>'}
+function form(type='up',opts={}){let birthday=type==='birthday',down=type==='down';let name=opts.empty?'<span class="placeholder">请输入事项名称</span>':(opts.edit?'晚间阅读':birthday?'小林生日':down?'考试':'阅读');let b=tabs(type)+'<div class="content">'+row('名称','<div class="input '+(opts.empty?'error':'')+'">'+name+'</div>',birthday?'gift':'book',false)+(opts.empty?'<div class="errorline">请填写事项名称</div>':'');if(birthday)b+=row('日期类型','<span class="pill">公历</span>　农历','cal',false);b+=row(birthday?'生日日期':down?'目标日期':'开始日期',birthday?'12月8日':down?'2026年12月15日':'2026年11月17日');b+=row('循环',birthday?'每年':opts.edit?'每周一、三、五':down?'仅一次':'每天','repeat',!birthday);if(!down&&!birthday)b+=row('结束条件','不设结束','flag');b+='<div class="hint">'+(birthday?'每年提醒这一天':down?'展示距离目标日期的天数':'从开始日期累计天数')+'</div>'+ai()+row('备注','<div class="input placeholder">'+(opts.edit?'睡前阅读':'选填')+'</div>','note',false)+'</div>';return base(opts.edit?'编辑事项':'新建事项',b,opts.saving?'保存中…':opts.edit?'保存修改':'保存',type)}
+function shell(id,name,html,type='up'){return '<div><article class="screen" id="'+id+'" data-name="'+name+'" style="--accent:'+colors[type][0]+';--tint:'+colors[type][1]+'">'+html+'</article><div class="caption">'+name+'</div></div>'}
+function sheet(title,inside){return '<div class="overlay"><div class="sheet"><div class="handle"></div><div class="sheet-title">'+title+'</div>'+inside+'</div></div>'}
+function radioRow(name,checked){return '<div class="row"><span>'+name+'</span><span class="radio '+(checked?'checked':'')+'"></span></div>'}
+function detail(){return base('事项详情','<div class="hero detail-hero">'+icon('book')+'<h3>阅读</h3><span class="pill">正计时</span><div class="helper">从 2026年11月17日开始</div></div><div class="content detail-content">'+row('开始日期','2026年11月17日','cal',false)+row('循环','每天','repeat',false)+row('结束条件','不设结束','flag',false)+row('AI习惯分析','未参与','spark',false)+row('备注','每天读一点','note',false)+'<h3>当天记录</h3><div class="row">◯　确认今天已记录</div><div class="helper"></div></div><div class="foot"><div class="btn outline">编辑事项</div><div class="center-title danger-text" style="font-size:14px">删除事项</div></div>','','up','编辑')}
+function home(){let cells=['一','二','三','四','五','六','日'].map(x=>'<div class="calcell weekday">'+x+'</div>').join('');for(let i=0;i<6;i++)cells+='<div class="calcell"></div>';for(let d=1;d<=30;d++)cells+='<div class="calcell '+(d===17?'selected':'')+'">'+d+'</div>';let items=[['晚间阅读','正计时 · 每周一三五','up','book'],['考试','倒数日 · 12月15日','down','cal'],['小林生日','生日 · 12月8日','birthday','gift']].map(([n,v,t,i])=>'<div class="item" style="--accent:'+colors[t][0]+';color:'+colors[t][0]+'"><span class="stripe"></span>'+icon(i)+'<b style="color:#263842">'+n+'</b><small>'+v+'</small><span style="margin-left:auto">›</span></div>').join('');return base('万事历','<div class="calendar"><div class="month"><span>‹</span><b>2026年11月</b><span>›</span><small>今天</small></div><div class="calgrid">'+cells+'</div></div><div class="items"><h3>11月17日 周二 <small class="helper">共3项</small></h3>'+items+'</div><div class="toast">✓ 已保存</div><div class="plus">＋</div><div class="bottomnav"><span>日历</span><span>统计</span><span>我的</span></div>','','up','')}
+
+const scenes=[
+ ['3:8','02-01 新建 · 空表单',()=>form().replace('阅读','<span class="placeholder">请输入事项名称</span>')],
+ ['3:9','02-02 新建 · 正计时',()=>form()],
+ ['3:10','02-03 新建 · 倒数日',()=>form('down'),'down'],
+ ['3:11','02-04 新建 · 生日与历法',()=>form('birthday'),'birthday'],
+ ['3:12','02-05 循环设置',()=>form()+sheet('循环方式 <span class="plain">完成</span>',['仅一次','每天','每周','每月','每年','仅工作日','仅周末'].map(x=>radioRow(x,x==='每天')).join('')+'<p class="helper">仅工作日按中国法定节假日与调休安排计算</p>')],
+ ['3:13','02-06 正计时 · 结束条件',()=>form()+sheet('结束条件',radioRow('不设结束',true)+radioRow('持续天数',false)+'<div class="subfield"><span>持续</span><b>30 天</b></div><div class="btn">完成</div>')],
+ ['137:3067','02 补充 · 日期选择',()=>form()+sheet('开始日期','<div class="wheel">'+[['2025年','10月','16日'],['2026年','11月','17日'],['2027年','12月','18日']].map((a,i)=>'<div class="wheel-line '+(i===1?'selected':'')+'">'+a.map(x=>'<span>'+x+'</span>').join('')+'</div>').join('')+'</div><div class="btn">确认日期</div>')],
+ ['137:3182','02 补充 · 每周星期',()=>form()+sheet('每周重复','<p class="helper">选择事项出现的星期</p><div class="days">'+['一','二','三','四','五','六','日'].map((x,i)=>'<span class="day '+([0,2,4].includes(i)?'selected':'')+'">'+x+'</span>').join('')+'</div><div class="btn">完成</div>')],
+ ['137:3804','02 补充 · 每月规则',()=>form()+sheet('每月重复',row('日期','每月17日')+'<div class="btn">完成</div>')],
+ ['137:3911','02 补充 · 每年规则',()=>form()+sheet('每年重复',row('月份','11月')+row('日期','17日')+'<div class="btn">完成</div>')],
+ ['137:3293','02 补充 · 农历生日',()=>form('birthday').replace('<span class="pill">公历</span>　农历','公历　<span class="pill">农历</span>').replace('12月8日','冬月初八'),'birthday'],
+ ['137:3529','02 补充 · 名称未填',()=>form('up',{empty:true})],
+ ['3:15','03-01 事项详情',()=>detail()],
+ ['3:16','03-02 编辑事项',()=>form('up',{edit:true})],
+ ['3:17','03-03 修改循环范围',()=>form('up',{edit:true})+sheet('将修改应用于',radioRow('仅这一次',true)+radioRow('这次及之后',false)+'<p class="helper">请确认修改范围，再保存本次更改。</p><div class="btn">确认保存</div>')],
+ ['3:18','03-04 删除确认',()=>detail()+sheet('删除这条事项？','<p class="helper">晚间阅读 · 每周一、三、五</p>'+radioRow('仅这一次',true)+radioRow('整个系列',false)+'<p class="helper">删除前，请确认要移除的事项范围。</p><div class="split"><div class="btn outline">取消</div><div class="btn danger">确认删除</div></div>')],
+ ['137:3616','03 补充 · 未保存退出',()=>form('up',{edit:true})+'<div class="overlay"><div class="dialog"><h3>放弃本次修改？</h3><p>修改内容尚未保存。</p><div class="btn">继续编辑</div><div class="plain">放弃修改</div></div></div>'],
+ ['137:4025','03 补充 · 保存中',()=>form('up',{edit:true,saving:true})],
+ ['137:3376','03 补充 · 保存成功',()=>home()],
+ ['138:6590','03 补充 · 返回当天',()=>home().replace(/<div class="toast">.*?<\/div>/,'')],
+ ['144:7580','03 补充 · 删除后剩余两项',()=>home().replace(/<div class="toast">.*?<\/div>/,'').replace(/<div class="item"[^>]*>.*?晚间阅读.*?<\/div>/,'').replace('共3项','共2项')],
+ ['review:fail','03 补充 · 保存失败',()=>form('up',{edit:true}).replace('<div class="foot"><div class="btn">保存修改</div></div>','<div class="foot"><div class="errorbox"><b>保存失败，请重试</b><div>填写内容已保留</div></div><div class="btn">重试保存</div></div>')]
+];
+const sceneMap=new Map(scenes.map(s=>[s[0],s]));
+const selectedBefore=$('screen').value;
+for(const [id,name]of scenes){const option=document.createElement('option');option.value=id;option.textContent=name;$('screen').append(option)}
+$('screen').value=selectedBefore;
+
+setPrototype=function(node){
+ const real=node==='review:fail'?'3:4':node;
+ const url=new URL('https://www.figma.com/proto/'+CONFIG.figmaKey);
+ url.search=new URLSearchParams({'node-id':real,'page-id':'2:2','starting-point-node-id':real,scaling:'scale-down','content-scaling':'fixed','show-proto-sidebar':node==='review:fail'?'1':'0'});
+ $('open-prototype').href=url.href;$('fallback-prototype').href=url.href;
+ $('prototype').dataset.source='https://embed.figma.com/proto/'+CONFIG.figmaKey+'?'+url.searchParams+'&embed-host=wanshili-workbench';
+ if(!reviewMode)$('prototype').src=$('prototype').dataset.source;
+ document.querySelector('.caption').textContent=node==='review:fail'?'Figma左栏选择“保存失败与重试”查看此状态。':'Figma原文件交互演示；如需登录，可独立打开。';
+};
+const oldReviewMode=setReviewMode;
+setReviewMode=function(value){oldReviewMode(value);if(!value&&$('prototype').dataset.source)$('prototype').src=$('prototype').dataset.source;updateAuditPanel()};
+
+const anchorLabels={
+ 'event-type':'事项类型切换','event-name':'名称输入','event-date':'日期与历法','event-repeat':'循环方式','event-duration':'结束条件','event-ai':'AI分析范围','event-save':'保存状态','event-item':'事项列表行','event-edit':'编辑入口','event-delete':'删除确认','event-discard':'未保存退出','event-error':'名称校验','event-scope':'修改范围','event-retry':'失败重试'
+};
+for(const [value,label]of Object.entries(anchorLabels)){const opt=document.createElement('option');opt.value=value;opt.textContent=label;$('note-anchor').append(opt)}
+BASE_NOTES[0].kind='改动';BASE_NOTES[0].screens=['3:4','3:5','3:6','137:3376','138:6590','144:7580'];BASE_NOTES[1].screens=['3:3','3:4','3:5','3:6'];BASE_NOTES[2].screens=['3:4','3:6'];
+for(const n of reviewNotes){if(n.doc==='page-design'&&['3. 月历交互','5. 空态'].includes(n.chapter))n.chapter='1. 月历与当天事项'}
+
+function mark(el,anchor){if(!el)return;el.dataset.anchor=anchor;el.setAttribute('role','button');el.tabIndex=0;el.setAttribute('aria-label',anchorLabels[anchor]||anchor)}
+function annotateScene(phone,id){
+ const overlay=phone.querySelector('.overlay');
+ if(overlay){
+  const anchors={'3:12':'event-repeat','3:13':'event-duration','137:3067':'event-date','137:3182':'event-repeat','137:3804':'event-repeat','137:3911':'event-repeat','3:17':'event-scope','3:18':'event-delete','137:3616':'event-discard'};
+  mark(overlay.querySelector('.sheet,.dialog'),anchors[id]);return;
+ }
+ if(id==='3:15'){mark(phone.querySelector('.foot .btn'),'event-edit');mark(phone.querySelector('.nav .plain'),'event-edit');mark(phone.querySelector('.danger-text'),'event-delete');return}
+ if(['137:3376','138:6590','144:7580'].includes(id)){mark(phone.querySelector('.item'),'event-item');mark(phone.querySelector('.plus'),'add');return}
+ mark(phone.querySelector('.tabs'),'event-type');
+ for(const el of phone.querySelectorAll('.row')){const label=el.querySelector('.label')?.textContent.trim();const anchor={'名称':'event-name','开始日期':'event-date','目标日期':'event-date','生日日期':'event-date','日期类型':'event-date','循环':'event-repeat','结束条件':'event-duration'}[label];if(anchor)mark(el,anchor)}
+ mark(phone.querySelector('.ai'),'event-ai');
+ if(id==='3:15'){mark(phone.querySelector('.foot .btn'),'event-edit');mark(phone.querySelector('.danger-text'),'event-delete')}
+ else if(id==='review:fail')mark(phone.querySelector('.foot'),'event-retry');
+ else mark(phone.querySelector('.foot .btn'),'event-save');
+ mark(phone.querySelector('.nav .plain'),'event-discard');
+ mark(phone.querySelector('.errorline'),'event-error');
+ mark(phone.querySelector('.item'),'event-item');mark(phone.querySelector('.plus'),'add');
+}
+const previousPhone=renderPhone;
+renderPhone=function(){
+ const id=$('screen').value,scene=sceneMap.get(id),phone=$('review-phone');
+ if(!scene){phone.classList.remove('flow-screen');previousPhone();updateAuditPanel();return}
+ phone.classList.add('flow-screen');phone.dataset.scene=id;
+ const type=scene[3]||'up';phone.style.setProperty('--accent',colors[type][0]);phone.style.setProperty('--tint',colors[type][1]);phone.innerHTML=scene[2]();annotateScene(phone,id);
+ $('review-page-name').textContent=scene[1];$('note-count').textContent=reviewNotes.length;$('custom-count').textContent='共享及补充批注 '+(reviewNotes.length-3);$('review-counts').textContent='本页可定位 '+visibleNotes().length;
+ fitPhone();renderStageNote();updateAuditPanel();requestAnimationFrame(drawReview);
+};
+const previousClick=$('review-phone').onclick;
+$('review-phone').onclick=e=>{if(!sceneMap.has($('screen').value)){previousClick(e);return}const el=e.target.closest('[data-anchor]');if(!el)return;const n=visibleNotes().find(n=>n.anchor===el.dataset.anchor);if(n)selectNote(n.id);else toast('此位置可通过“＋批注”补充说明')};
+$('review-phone').addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.matches('[data-anchor][role=button]')){e.preventDefault();e.target.click()}});
+
+function auditPage(){
+ const id=$('screen').value;
+ const anchors=[...new Set([...$('review-phone').querySelectorAll('[data-anchor]')].map(n=>n.dataset.anchor))];
+ const chapterOK=n=>state.documents.has(n.doc)&&chapters(state.documents.get(n.doc)).some(c=>c.title===n.chapter);
+ const relevant=reviewNotes.filter(n=>(n.screens?n.screens.includes(id):n.screen?n.screen===id:!!anchorElement(n)));
+ const matched=anchors.filter(a=>relevant.some(n=>n.anchor===a&&chapterOK(n)));
+ return {page:$('screen').selectedOptions[0].textContent,total:anchors.length,matched:matched.length,missing:anchors.filter(a=>!matched.includes(a)),broken:relevant.filter(n=>!chapterOK(n)),absent:relevant.filter(n=>!anchorElement(n)),percent:anchors.length?Math.round(matched.length/anchors.length*100):null};
+}
+function auditText(){const a=auditPage();return '当前页面：'+a.page+'\n文档锚点覆盖：'+(a.percent===null?'不适用':a.percent+'%')+'（'+a.matched+'/'+a.total+'）\n缺少说明：'+(a.missing.join('、')||'无')+'\n章节失效：'+(a.broken.map(n=>n.title).join('、')||'无')+'\n本页未出现：'+(a.absent.map(n=>n.title).join('、')||'无')}
+function updateAuditPanel(){
+ $('live-audit')?.remove();if(state.active!=='checks')return;
+ const a=auditPage(),panel=document.createElement('section');panel.id='live-audit';panel.setAttribute('aria-label','当前页面锚点校验');
+ const headline=document.createElement('div');headline.className='coverage';const label=document.createElement('span');label.textContent='当前页面文档覆盖 '+a.matched+'/'+a.total;const percent=document.createElement('strong');percent.textContent=a.percent===null?'不适用':a.percent+'%';headline.append(label,percent);panel.append(headline);
+ const intro=document.createElement('p');intro.textContent=a.page;panel.append(intro);
+ const issues=[...a.missing.map(x=>['缺少说明',x]),...a.broken.map(x=>['章节失效',x.title+' → '+x.chapter]),...a.absent.map(x=>['本页未出现',x.title])];
+ if(!issues.length){const p=document.createElement('p');p.className='audit-pass';p.textContent='当前页面的具名锚点均有可定位的文档说明。';panel.append(p)}
+ for(const [kind,text]of issues){const item=document.createElement('div');item.className='audit-issue';const h=document.createElement('strong');h.textContent=kind;const p=document.createElement('p');p.textContent=text;item.append(h,p);panel.append(item)}
+ const button=document.createElement('button');button.textContent='复制本页校验结果';button.onclick=()=>copy(auditText());panel.append(button);$('content').prepend(panel);
+}
+let pendingLinkNote=new URLSearchParams(location.search).get('note');
+const previousRender=render;
+render=function(){previousRender();updateAuditPanel();if(pendingLinkNote&&state.documents.size===5&&reviewNotes.some(n=>n.id===pendingLinkNote)){const id=pendingLinkNote;pendingLinkNote=null;requestAnimationFrame(()=>selectNote(id))}};
+const previousRaw=rawForActive;
+rawForActive=function(){return previousRaw()+(state.active==='checks'?'\n\n## 当前页面校验\n\n'+auditText():'')};
+reviewCaption.textContent='V0.4 页面快照用于标注，使用预设数据；切换Figma演示体验原文件跳转。';
+const deepLink=new URLSearchParams(location.search).get('screen');if(deepLink&&[...$('screen').options].some(o=>o.value===deepLink))$('screen').value=deepLink;
+setPrototype($('screen').value);renderPhone();render();
+})();

@@ -1,4 +1,274 @@
 {
-  "version": 1,
-  "notes": []
+  "version": 2,
+  "notes": [
+    {
+      "id": "flow-type",
+      "anchor": "event-type",
+      "title": "事项类型与字段",
+      "text": "正计时显示结束条件，倒数日使用目标日，生日支持公历/农历并每年重复。",
+      "doc": "prd",
+      "chapter": "3. 新建与循环",
+      "screen": "3:9",
+      "screens": [
+        "3:8",
+        "3:9",
+        "3:10",
+        "3:11",
+        "3:16",
+        "137:3293",
+        "137:3529",
+        "137:4025",
+        "review:fail"
+      ],
+      "kind": "新增",
+      "status": "V0.4 原型说明"
+    },
+    {
+      "id": "flow-name",
+      "anchor": "event-name",
+      "title": "名称必填",
+      "text": "名称去首尾空白后必填；其他表单内容在校验失败后保留。",
+      "doc": "prd",
+      "chapter": "3. 新建与循环",
+      "screen": "3:8",
+      "screens": [
+        "3:8",
+        "3:9",
+        "3:10",
+        "3:11",
+        "3:16",
+        "137:3293",
+        "137:3529",
+        "137:4025",
+        "review:fail"
+      ],
+      "kind": "新增",
+      "status": "V0.4 原型说明"
+    },
+    {
+      "id": "flow-date",
+      "anchor": "event-date",
+      "title": "日期与历法面板",
+      "text": "日期确认返回原表单；新建带入选中日，生日保留原历法。",
+      "doc": "page-design",
+      "chapter": "2. 新建与循环",
+      "screen": "137:3067",
+      "screens": [
+        "3:8",
+        "3:9",
+        "3:10",
+        "3:11",
+        "3:16",
+        "137:3293",
+        "137:3529",
+        "137:4025",
+        "review:fail",
+        "137:3067"
+      ],
+      "kind": "新增",
+      "status": "V0.4 原型说明"
+    },
+    {
+      "id": "flow-repeat",
+      "anchor": "event-repeat",
+      "title": "循环规则与子层",
+      "text": "支持七种方式，每周、每月、每年各有配置；假调休数据缺失时明确提示。",
+      "doc": "prd",
+      "chapter": "3. 新建与循环",
+      "screen": "3:12",
+      "screens": [
+        "3:8",
+        "3:9",
+        "3:10",
+        "3:11",
+        "3:16",
+        "137:3293",
+        "137:3529",
+        "137:4025",
+        "review:fail",
+        "3:12",
+        "137:3182",
+        "137:3804",
+        "137:3911"
+      ],
+      "kind": "新增",
+      "status": "V0.4 原型说明"
+    },
+    {
+      "id": "flow-duration",
+      "anchor": "event-duration",
+      "title": "正计时结束条件",
+      "text": "正计时可选持续天数或不设结束，生日和倒数日隐藏该字段。",
+      "doc": "page-design",
+      "chapter": "2. 新建与循环",
+      "screen": "3:13",
+      "screens": [
+        "3:8",
+        "3:9",
+        "3:16",
+        "3:13",
+        "137:3529",
+        "137:4025",
+        "review:fail"
+      ],
+      "kind": "新增",
+      "status": "V0.4 原型说明"
+    },
+    {
+      "id": "flow-ai",
+      "anchor": "event-ai",
+      "title": "分析范围",
+      "text": "先查全局开关，再筛单事项范围；被排除项不进入分析。",
+      "doc": "dev-spec",
+      "chapter": "5. AI与数据保护",
+      "screen": "3:9",
+      "screens": [
+        "3:8",
+        "3:9",
+        "3:10",
+        "3:11",
+        "3:16",
+        "137:3293",
+        "137:3529",
+        "137:4025",
+        "review:fail"
+      ],
+      "kind": "新增",
+      "status": "V0.4 原型说明"
+    },
+    {
+      "id": "flow-save",
+      "anchor": "event-save",
+      "title": "保存与重复操作",
+      "text": "校验后保存，保存中拒绝重复提交，成功才更新列表；原型使用预设数据。",
+      "doc": "dev-spec",
+      "chapter": "3. 保存与状态流转",
+      "screen": "3:9",
+      "screens": [
+        "3:8",
+        "3:9",
+        "3:10",
+        "3:11",
+        "3:16",
+        "137:3293",
+        "137:3529",
+        "137:4025"
+      ],
+      "kind": "新增",
+      "status": "V0.4 原型说明"
+    },
+    {
+      "id": "flow-item",
+      "anchor": "event-item",
+      "title": "从当天事项进入详情",
+      "text": "点击事项整行进入详情，类型、日期与配置可核对。",
+      "doc": "prd",
+      "chapter": "4. 详情、编辑与删除",
+      "screen": "138:6590",
+      "screens": [
+        "137:3376",
+        "138:6590",
+        "144:7580"
+      ],
+      "kind": "新增",
+      "status": "V0.4 原型说明"
+    },
+    {
+      "id": "flow-edit",
+      "anchor": "event-edit",
+      "title": "编辑现有配置",
+      "text": "从详情进入编辑，回填当前配置；修改在确认保存后生效。",
+      "doc": "page-design",
+      "chapter": "3. 详情、编辑与删除",
+      "screen": "3:15",
+      "screens": [
+        "3:15"
+      ],
+      "kind": "新增",
+      "status": "V0.4 原型说明"
+    },
+    {
+      "id": "flow-delete",
+      "anchor": "event-delete",
+      "title": "删除确认与其他事项",
+      "text": "先选择范围并确认，取消返回详情；删除后保留其他事项。",
+      "doc": "prd",
+      "chapter": "4. 详情、编辑与删除",
+      "screen": "3:18",
+      "screens": [
+        "3:15",
+        "3:18"
+      ],
+      "kind": "新增",
+      "status": "V0.4 原型说明"
+    },
+    {
+      "id": "flow-discard",
+      "anchor": "event-discard",
+      "title": "未保存退出确认",
+      "text": "返回或取消时询问，可继续编辑或放弃本次修改。",
+      "doc": "page-design",
+      "chapter": "3. 详情、编辑与删除",
+      "screen": "137:3616",
+      "screens": [
+        "3:8",
+        "3:9",
+        "3:10",
+        "3:11",
+        "3:16",
+        "137:3293",
+        "137:3529",
+        "137:4025",
+        "review:fail",
+        "137:3529",
+        "137:4025",
+        "review:fail",
+        "137:3616"
+      ],
+      "kind": "新增",
+      "status": "V0.4 原型说明"
+    },
+    {
+      "id": "flow-error",
+      "anchor": "event-error",
+      "title": "空名称提示",
+      "text": "空名称保存后显示错误边框与字段下提示；本状态已在Figma验证。",
+      "doc": "validation",
+      "chapter": "1. 2026-11-18：新建与名称校验",
+      "screen": "137:3529",
+      "screens": [
+        "137:3529"
+      ],
+      "kind": "新增",
+      "status": "V0.4 原型说明"
+    },
+    {
+      "id": "flow-scope",
+      "anchor": "event-scope",
+      "title": "修改循环作用范围",
+      "text": "原型展示仅这一次、这次及之后；历史处理策略仍待确认。",
+      "doc": "prd",
+      "chapter": "4. 详情、编辑与删除",
+      "screen": "3:17",
+      "screens": [
+        "3:17"
+      ],
+      "kind": "新增",
+      "status": "V0.4 原型说明"
+    },
+    {
+      "id": "flow-retry",
+      "anchor": "event-retry",
+      "title": "保存失败与重试",
+      "text": "失败保留表单，重试后可返回当天列表；真实存储需后续开发。",
+      "doc": "validation",
+      "chapter": "4. 2026-11-18：删除与失败重试",
+      "screen": "review:fail",
+      "screens": [
+        "review:fail"
+      ],
+      "kind": "新增",
+      "status": "V0.4 原型说明"
+    }
+  ]
 }
