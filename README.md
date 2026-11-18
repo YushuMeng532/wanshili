@@ -1,40 +1,37 @@
 # 万事历
-每天轻松记录，月末自动算清各类事项实际发生了多少天。
+每天轻松记录，月末查看各类事项实际发生了多少天。
 
-面向同时记录日常活动与重要日期的用户，将正计时、倒数日、生日放进同一日历，串起“创建—每日确认—月度汇总—明细核对”。
+正计时、倒数日和生日共用一张日历，支持同日多项。产品主线为“创建事项—每日确认—月度汇总—明细核对”。
 
-[在线评审工作台](https://yushumeng532.github.io/wanshili/) · [Figma设计](https://www.figma.com/design/8aE2Z9hUhKtxgXjnEuCY7I?node-id=108-65)
+[在线产品工作台](https://yushumeng532.github.io/wanshili/) · [Figma交互演示](https://www.figma.com/proto/8aE2Z9hUhKtxgXjnEuCY7I?node-id=3-4&page-id=2%3A2&starting-point-node-id=3%3A4&scaling=scale-down&content-scaling=fixed&show-proto-sidebar=1) · [设计文件](https://www.figma.com/design/8aE2Z9hUhKtxgXjnEuCY7I?node-id=2-2)
 
-## 产品分析与方案
+## 产品文档
 
-| 文档 | 评审内容 |
+| 文档 | 内容 |
 | --- | --- |
-| [竞品发现与取舍](docs/research.md) | 六个样本的成熟能力如何转成产品功能 |
-| [PRD](docs/modules/01-calendar/prd.md) | 目标、流程、页面规则和月末天数口径 |
-| [Dev Spec](docs/modules/01-calendar/dev-spec.md) | 原始数据、循环、保存与汇总 |
-| [页面设计](docs/modules/01-calendar/page-design.md) | 页面状态和反馈 |
-| [验证](docs/modules/01-calendar/validation.md) | 验收清单与实际记录 |
+| [PRD](docs/modules/01-calendar/prd.md) | 按页面说明用户动作、产品行为与规则 |
+| [Dev Spec](docs/modules/01-calendar/dev-spec.md) | 数据、保存、循环及统计契约 |
+| [页面设计](docs/modules/01-calendar/page-design.md) | 页面布局、状态与动效 |
+| [验证记录](docs/modules/01-calendar/validation.md) | 按日期记录实测过程和结果 |
+| [校验说明](docs/modules/01-calendar/checks.md) | 原型锚点与文档的对应关系 |
+| [原型与流程](docs/modules/01-calendar/prototype.md) | 页面索引、流程图与演示入口 |
+| [竞品研究](docs/research.md) | 六个样本的能力如何转成产品取舍 |
 
-参照[示例模板](https://release-2-0-1-product-workspace-preview.colleenyuyu.workers.dev/prd#/agent-studio)按页面写规则、PRD对应Spec、独立记录验证结果的写法，沿用现有文件路径供工作台读取。
+## V0.4 更新
 
-## 核心取舍
+新增新建表单、日期与循环子层、详情、编辑、未保存确认、删除和保存反馈。界面已归入原 Figma 的 02、03 模块，核心跳转已实际点击验证；工作台可选对应页面，批注连接至相关章节。
 
-借鉴日历的重复规则、日志工具的快速记录、习惯工具的月度回顾。计划与实际发生分开；月末按日期去重统计，点击合计返回原记录修正。
-
-## 当前进度
-
-| 交付 | 状态 |
+| 交付 | 当前状态 |
 | --- | --- |
-| 文档评审工作台 | 已上线，含章节复制及批注 |
-| 月历与当天面板 | 四张界面，部分交互连线 |
-| 事项流程 | 20屏已导入Figma，逐层检查及连线待完成 |
-| 月度统计与实际记录闭环 | 需求已定义，待设计开发验证 |
-| AI漏记询问 | 方案规划，尚未上线 |
+| 双栏工作台 | 已上线；支持章节复制、批注和锚点校验 |
+| 创建到删除 | 核心原型流程已验证，使用预设数据 |
+| 每日确认与月末统计 | 需求与数据口径已定义，待设计开发 |
+| 经期记录、AI漏记询问与分析范围 | 保留后续模块，待细化 |
 
-## 迭代与预览
+## 协作与启动
 
-分支修改 → PR评审 → 合并 → GitHub Pages部署。交互改动同步PRD、页面规则与验收；数据改动同步Spec。
+分支修改 → PR查看差异 → 合并 → GitHub Pages部署。页面改动同步PRD、设计和验证；数据规则改动同步Spec。当前有效文档沿用固定路径，历史由Git保存。
 
-仓库根目录运行 `python -m http.server 8765`，打开 http://localhost:8765/ 。技术为HTML/CSS/JavaScript与Markdown。工作台批注保存独立于产品事项保存。
+本地运行 `python -m http.server 8765`，打开 http://localhost:8765/ 。工作台由HTML、CSS、JavaScript和Markdown组成，批注存储与产品事项数据相互独立。
 
-下一步优先补齐“每日确认—月度天数—明细修改”；特殊日期、循环历史处理和假调休来源待确认，记录成本与统计维度需用户体验验证。
+下一步补齐真实输入与本地保存，再验证“每日确认—月末天数—明细修改”。特殊日期、循环历史及假调休数据来源仍待确认。

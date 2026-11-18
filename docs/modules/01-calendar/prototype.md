@@ -1,35 +1,29 @@
-# 万事历｜月历与当天事项 原型入口
+# 万事历 原型与流程
+版本：V0.4 · 更新：2026-11-18
 
-## 1. Figma设计文件
+[完整流程演示](https://www.figma.com/proto/8aE2Z9hUhKtxgXjnEuCY7I?node-id=3-4&page-id=2%3A2&starting-point-node-id=3%3A4&scaling=scale-down&content-scaling=fixed&show-proto-sidebar=1) · [Figma设计](https://www.figma.com/design/8aE2Z9hUhKtxgXjnEuCY7I?node-id=2-2) · [工作台](https://yushumeng532.github.io/wanshili/)
 
-[打开万事历Figma原型文件](https://www.figma.com/design/8aE2Z9hUhKtxgXjnEuCY7I)
+## 1. 本版流程
 
-## 2. 页面对应关系
+![选择日期到修改删除的事项流程](../../flows/event-lifecycle.svg)
 
-| 页面编号 | 页面名称 |
-|---|---|
-| 01-01 | 月历·有记录 |
-| 01-02 | 月历·空态 |
-| 01-03 | 当天事项·多项 |
-| 01-04 | 当天事项·空态 |
+选日 → 新建 → 类型与循环 → 保存 → 当天列表 → 详情 → 编辑或删除。异常分支包含名称未填、保存失败及未保存退出确认。
 
-## 3. 当前进度
+## 2. 原画框对应
 
-- 已绘制首批4张界面。
-- 已连接部分日期点击与面板关闭交互。
-- 月份切换、新增入口及其余交互待完善。
-- 触摸区域与长列表场景待检查。
+| 编号 | 页面 | Figma节点 |
+| --- | --- | --- |
+| 01-01～01-04 | 月历有记录、空态；当天多项、空态 | 3:3～3:6 |
+| 02-01 | 新建空表单与类型选择 | 3:8 |
+| 02-02～02-04 | 正计时、倒数日、生日 | 3:9～3:11 |
+| 02-05～02-06 | 循环、结束条件 | 3:12～3:13 |
+| 03-01～03-02 | 详情、编辑 | 3:15～3:16 |
+| 03-03～03-04 | 修改循环范围、删除确认 | 3:17～3:18 |
 
-## 4. 可交互演示入口
+补充日期、周/月/年循环、农历生日、名称校验、保存中、成功、失败及放弃修改状态放在对应02、03模块。原画框ID保留，原始导入稿及备份保留在评审Page。
 
-[打开可交互原型](https://www.figma.com/proto/8aE2Z9hUhKtxgXjnEuCY7I?node-id=3-4&page-id=2%3A2&starting-point-node-id=3%3A4&scaling=scale-down&content-scaling=fixed)
+## 3. 评审方式
 
-默认入口：01-02 月历·空态。
-双栏工作台嵌入配置：待完成。
+工作台左侧选页面，标注模式中点编号定位文档，文档可反向定位原型；切换Figma演示查看原文件交互。右侧分为PRD、Dev Spec、页面设计、验证和校验，各章可复制。
 
-## 5. 配套文档
-
-- [业务PRD](./prd.md)
-- [页面设计说明](./page-design.md)
-- [Dev Spec](./dev-spec.md)
-- [验证校验清单](./validation.md)
+核心跳转已在Figma实际验证，[验证记录](./validation.md)按日期保留过程。真实输入、所有循环分支及数据闭环仍待开发。

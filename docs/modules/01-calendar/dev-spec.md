@@ -1,40 +1,49 @@
-# 万事历 MVP Dev Spec
-V0.2 · 2026-11-18 · 待实现契约
+# 万事历 MVP 开发说明
+版本：V0.4 · 更新：2026-11-18
 
-## 1. 页面与职责
+关联：[PRD](./prd.md)、[页面设计](./page-design.md)、[验证记录](./validation.md)。
 
-逻辑页面calendar、event/new、event/:id、statistics，作为设计映射。Repository统一读写；RecurrenceService生成计划；SummaryService计算合计。初版本地存储适配器，后续可替换云端。
+## 1. 实现位置与边界
 
-## 2. 数据结构
+| 内容 | 当前文件 |
+| --- | --- |
+| 双栏、Markdown、章节复制与批注线 | `index.html` |
+| 新增事项页面和预设状态跳转 | `assets/event-flow.js` |
+| 新增页面样式 | `assets/event-flow.css` |
+| 共享批注与页面锚点 | `wanshili-annotations.json` |
+| 产品规则与验证 | 本目录Markdown |
 
-| 对象 | 字段 |
+当前代码承担原型评审。下列对象与方法为产品开发契约；事项持久化、循环计算和统计服务尚未接入。
+
+## 2. 数据与唯一性
+
+| 对象 | 字段与约束 |
 | --- | --- |
 | Event | id、title、type、date、calendarType、recurrence、endCondition、aiIncluded、createdAt、updatedAt |
 | Recurrence | frequency、weekdays、monthDay、yearMonth、yearDay |
-| DailyRecord | eventId、date、status(occurred/not_occurred)、note、createdAt、updatedAt |
+| DailyRecord | eventId、date、status、note、createdAt、updatedAt；eventId+date唯一 |
+| OccurrenceException | eventId、date、override或cancelled；单次循环修改的覆盖记录 |
 | Settings | aiEnabled=false、schemaVersion |
 | HolidayCalendar | year、date、isWorkday、source、version |
 
-eventId+date唯一；无记录代表未记录。日期YYYY-MM-DD，时间戳独立；保留生日原历法日期，换算可重算。特殊日期策略待确认。
+日期使用YYYY-MM-DD，时间戳独立。DailyRecord的status为occurred或not_occurred；缺记录代表未记录。保留生日原历法日期，换算结果可重算。
 
-## 3. 保存与修改
+## 3. 保存与状态流转
 
-内部契约：saveEvent、saveRecord、deleteOccurrence、getOccurrences、getMonthSummary。具体HTTP接口在接后端时定义。
+`editing → validating → saving → saved`；校验失败回表单，保存失败进入save_error并保留草稿。`saving`时拒绝重复提交；持久化成功后才更新列表。取消修改丢弃草稿，取消删除不写数据。
 
-校验必填后提交；保存中阻止重复提交，持久化成功再反馈。失败保留表单及旧数据；迁移失败不得清空数据。单次循环修改用例外覆盖；系列修改与历史处理按确认后的PRD执行。
+内部方法：`saveEvent`、`saveRecord`、`getOccurrences`、`deleteOccurrence`、`getMonthSummary`。统一经Repository读写，先用本地适配器；错误返回code、message和fieldErrors。后端接入时再定义HTTP协议。
 
 ## 4. 循环与统计
 
-计划实例与实际记录分开生成及合并。缺年份假调休表返回明确错误；特殊月日及农历规则确认前不静默代算。
+RecurrenceService生成计划实例，单次修改用例外覆盖；系列修改和删除的历史处理在业务规则确认后落地。缺少假调休年份数据返回`HOLIDAY_DATA_MISSING`，特殊日期不静默代算。
 
-按事项：筛选当月occurred后对date取集合。按类型：关联Event类型后对date取集合。全月：所有occurred日期并集，各类型不能直接相加。未记录从截至今天的计划实例缺确认记录推导，保留事项级明细。
+SummaryService从当月occurred原记录计算date集合：按事项取集合，按类型取并集，全月再取并集。未记录日期来自截至今天的计划实例缺确认记录。保存、修改、补录或删除后重算受影响月份，不独立维护合计副本。
 
-原始记录改动后重算受影响月份。跨度与倒数按日历日期差计算，与实际统计独立。
+## 5. AI与数据保护
 
-## 5. AI范围
+先检查全局开关，再筛aiIncluded；排除项的名称、备注及历史和未来记录均不进入分析。全局关闭保留单项偏好，写入建议前复查冲突并要求确认。数据迁移或读取失败保留旧数据，不能清空后假装成功。
 
-先查全局，再筛aiIncluded。排除项名称、备注及历史未来记录均不传入。全局关闭保留单事项偏好。确认建议时复查已有记录，不能静默覆盖。
+## 6. 原型差异
 
-## 6. 验证
-
-见[验证](./validation.md)。当前为技术契约，尚未作为产品功能验证通过。
+Figma底部面板使用匹配图层的Smart Animate；网页用相同预设状态重建，支持章节批注。日期选择、星期和作用范围仍需补充完整选择逻辑。农历换算、假调休、刷新后事项保存及月度统计均未作为已实现功能。
