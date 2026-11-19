@@ -1,5 +1,5 @@
 # 万事历 原型与流程
-版本：V0.4 · 更新：2026-11-18
+版本：V0.4 · 更新：2026-11-19
 
 [完整流程演示](https://www.figma.com/proto/8aE2Z9hUhKtxgXjnEuCY7I?node-id=3-4&page-id=2%3A2&starting-point-node-id=3%3A4&scaling=scale-down&content-scaling=fixed&show-proto-sidebar=1) · [Figma设计](https://www.figma.com/design/8aE2Z9hUhKtxgXjnEuCY7I?node-id=2-2) · [工作台](https://yushumeng532.github.io/wanshili/)
 
@@ -24,6 +24,6 @@
 
 ## 3. 评审方式
 
-工作台左侧选页面，标注模式中点编号定位文档，文档可反向定位原型；切换Figma演示查看原文件交互。右侧分为PRD、Dev Spec、页面设计、验证和校验，各章可复制。
+工作台默认进入网页演示，可填写名称、选择日期与循环、保存、查看详情、修改和删除。切换标注模式后，点编号定位文档，文档可反向定位原型；Figma演示保留原文件入口。画板以390 × 844等比缩放，100%时可在画布内滚动查看。右侧分为PRD、Dev Spec、页面设计、验证和校验，各章可复制。
 
 核心跳转已在Figma实际验证，[验证记录](./validation.md)按日期保留过程。真实输入、所有循环分支及数据闭环仍待开发。

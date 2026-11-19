@@ -1,5 +1,5 @@
 # 万事历 MVP 开发说明
-版本：V0.4 · 更新：2026-11-18
+版本：V0.4 · 更新：2026-11-19
 
 关联：[PRD](./prd.md)、[页面设计](./page-design.md)、[验证记录](./validation.md)。
 
@@ -8,7 +8,9 @@
 | 内容 | 当前文件 |
 | --- | --- |
 | 双栏、Markdown、章节复制与批注线 | `index.html` |
-| 新增事项页面和预设状态跳转 | `assets/event-flow.js` |
+| 事项页面与批注锚点 | `assets/event-flow.js` |
+| 网页演示状态、输入和保存/编辑/删除 | `assets/web-demo.js` |
+| 画板布局、同源字体与缩放 | `assets/web-demo.css`、`assets/figma/` |
 | 新增页面样式 | `assets/event-flow.css` |
 | 共享批注与页面锚点 | `wanshili-annotations.json` |
 | 产品规则与验证 | 本目录Markdown |
@@ -46,4 +48,6 @@ SummaryService从当月occurred原记录计算date集合：按事项取集合，
 
 ## 6. 原型差异
 
-Figma底部面板使用匹配图层的Smart Animate；网页用相同预设状态重建，支持章节批注。日期选择、星期和作用范围仍需补充完整选择逻辑。农历换算、假调休、刷新后事项保存及月度统计均未作为已实现功能。
+Figma底部面板使用匹配图层的Smart Animate。网页演示与标注模式分开：演示模式接受名称、日期、备注与星期选择，支持会话内新增、修改、删除和失败重试；标注模式保留章节定位。表单按390 × 844画板布局后整体等比缩放，使用同源Noto Sans SC字体子集。
+
+网页保存的是当前页面中的演示状态；刷新后重置。农历换算、法定假调休、循环实例生成、作用范围的数据处理和月度统计仍待产品实现。
