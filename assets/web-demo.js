@@ -41,7 +41,7 @@ function picker(overlay){const title=overlay.querySelector('.sheet-title')?.text
  if(title.includes('循环方式'))overlay.querySelectorAll('.row').forEach(x=>x.querySelector('.radio')?.classList.toggle('checked',x.textContent.trim()===draft.repeat));
  if(title.includes('持续次数')){const b=overlay.querySelector('.subfield b');if(b){b.innerHTML='<input class="demo-input" type="number" min="1" max="3650" aria-label="持续次数" value="'+(parseInt(draft.duration)||30)+'">';b.querySelector('input').oninput=e=>{if(e.target.validity.valid){draft.duration=e.target.value+' 次';dirty=true}}}}
 }
-function enhance(){const id=$('screen').value;phone.dataset.mode=playing?'demo':'annotation';if(!playing)return;
+function enhance(){const id=$('screen').value;phone.dataset.mode=playing?'demo':'annotation';if(!playing||id==='review:normal')return;
  renderFields(id);if(homeIds.includes(id)){renderRecords(id);renderCalendar()}
  if(id==='3:15'){const r=(records[recordIndex]&&R.shown(records[recordIndex],selectedISO()))||draft;setText(phone.querySelector('.hero h3'),r.name||'阅读');setText(phone.querySelector('.hero .pill'),typeText(r.type));setText(phone.querySelector('.hero .helper'),'从 '+dateText(r.date)+'开始');setText(field('开始日期'),dateText(r.date));setText(field('循环'),r.repeat);setText(field('正计时'),R.label(asEvent(r),selectedISO()));setText(field('结束条件'),r.duration);setText(field('AI开关'),r.ai?'开启（服务未接入）':'关闭（服务未接入）');setText(field('备注'),r.remark||'未填写')}
  if(phone.querySelector('.overlay'))picker(phone.querySelector('.overlay'));
@@ -94,9 +94,19 @@ function renderCalendar(){const dates=phone.querySelector('.phone-days,.calgrid'
 phone.addEventListener('keydown',e=>{if(playing&&(e.key==='Enter'||e.key===' ')&&e.target.matches('[role=button]')&&!e.target.matches('input')){e.preventDefault();e.stopImmediatePropagation();e.target.click()}},true);
 const demoButton=document.createElement('button');demoButton.id='mode-demo';demoButton.textContent='网页演示';demoButton.setAttribute('aria-pressed','true');$('mode-figma').before(demoButton);
 const modeBase=setReviewMode;setReviewMode=function(value){modeBase(value);document.body.classList.toggle('web-demo',value&&playing);demoButton.setAttribute('aria-pressed',String(value&&playing));$('mode-review').setAttribute('aria-pressed',String(value&&!playing));if(value)renderPhone()};
-demoButton.onclick=()=>{playing=true;setReviewMode(true)};$('mode-review').onclick=()=>{playing=false;setReviewMode(true)};
-const selectBase=selectNote;selectNote=function(...args){playing=false;document.body.classList.remove('web-demo');selectBase(...args);demoButton.setAttribute('aria-pressed','false');$('mode-review').setAttribute('aria-pressed','true')};
-const screenBase=$('screen').onchange;$('screen').onchange=e=>{layerBase='';const id=e.target.value;editing=['3:16','3:17','137:3616','review:fail'].includes(id);draft=sample();if(id==='3:8'||id==='137:3529')draft.name='';if(['3:10','3:12','137:3182','137:3804','137:3911','review:count'].includes(id)){draft.type='down';draft.repeat='仅一次'}if(id==='3:11'||id==='137:3293'){draft.type='birthday';draft.repeat='每年'}if(['3:3','3:5','3:15','3:16','3:18','144:7580'].includes(id)&&!records.length)records=[asEvent(sample()),asEvent({...sample(),name:'考试',type:'down',date:'2026-12-15',repeat:'仅一次'}),asEvent({...sample(),name:'小林生日',type:'birthday',repeat:'每年'})];baseline=JSON.stringify(draft);dirty=false;screenBase(e)};
+demoButton.onclick=()=>{if($('screen').value==='review:normal')return;playing=true;setReviewMode(true)};$('mode-review').onclick=()=>{playing=false;setReviewMode(true)};
+const selectBase=selectNote;selectNote=function(...args){playing=false;document.body.classList.remove('web-demo');selectBase(...args);demoButton.disabled=$('screen').value==='review:normal';demoButton.setAttribute('aria-pressed','false');$('mode-review').setAttribute('aria-pressed','true')};
+const screenBase=$('screen').onchange;$('screen').onchange=e=>{layerBase='';const id=e.target.value;
+ demoButton.disabled=id==='review:normal';
+ if(id==='review:normal'){
+   playing=false;
+   setReviewMode(true);
+   screenBase(e);
+   selectNote('normal-schedule-preview');
+   return;
+ }
+ editing=['3:16','3:17','137:3616','review:fail'].includes(id);draft=sample();if(id==='3:8'||id==='137:3529')draft.name='';if(['3:10','3:12','137:3182','137:3804','137:3911','review:count'].includes(id)){draft.type='down';draft.repeat='仅一次'}if(id==='3:11'||id==='137:3293'){draft.type='birthday';draft.repeat='每年'}if(['3:3','3:5','3:15','3:16','3:18','144:7580'].includes(id)&&!records.length)records=[asEvent(sample()),asEvent({...sample(),name:'考试',type:'down',date:'2026-12-15',repeat:'仅一次'}),asEvent({...sample(),name:'小林生日',type:'birthday',repeat:'每年'})];baseline=JSON.stringify(draft);dirty=false;screenBase(e)};
 reviewCaption.textContent='390 × 844 原尺寸等比缩放 · 网页演示可填写并完成新建、编辑、删除；标注模式查看文档连线。V0.5：过去日程自动已发生；演示数据仅在本次页面中保留。';
-window.WanshiliPrototype={get records(){return records},get draft(){return draft},selectedISO};baseline=JSON.stringify(draft);setReviewMode(true);
+window.WanshiliPrototype={get records(){return records},get draft(){return draft},selectedISO};baseline=JSON.stringify(draft);
+if($('screen').value==='review:normal'){$('screen').onchange({target:$('screen')});}else setReviewMode(true);
 })();

@@ -11,3 +11,36 @@
 .doc-figure{display:block;width:100%;max-height:660px;object-fit:contain;margin:16px auto}.validation-status{font-size:12px;color:#54758a}.coverage{display:flex;justify-content:space-between;align-items:center;padding:18px;background:#edf5fa;border:1px solid #dbe6ed;border-radius:14px;margin-bottom:18px}.coverage strong{font-size:24px}.audit-issue{border-left:3px solid #c8a0ad;padding:10px 14px;margin:12px 0;background:#fffafb}.audit-issue p{margin:5px 0}.audit-pass{color:#596b3d}.review-point{min-width:32px;min-height:32px;width:32px;height:32px}
 
 #review-start{display:none}
+
+/* The proposed type selector fits the same 390 × 844 review frame. */
+#review-phone[data-scene="review:normal"] .tabs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  height: auto;
+  gap: 8px;
+  margin-bottom: 12px;
+  border: 0;
+}
+#review-phone[data-scene="review:normal"] .tab {
+  min-height: 44px;
+  padding: 10px 4px;
+  border: 1px solid #dce5eb;
+  border-radius: 10px;
+  background: white;
+  font-size: 15px;
+}
+#review-phone[data-scene="review:normal"] .tab.on {
+  border-color: #9ab7c8;
+  background: #e9f2f8;
+  color: #36586e;
+}
+#review-phone[data-scene="review:normal"] .row { min-height: 55px; }
+#review-phone[data-scene="review:normal"] .hint { margin: 16px 0 12px; }
+#review-phone[data-scene="review:normal"] .ai { margin-top: 12px; padding: 12px 0; }
+.normal-preview-caption {
+  position: absolute;
+  bottom: 90px;
+  left: 24px;
+  color: #54758a;
+  font-size: 12px;
+}
