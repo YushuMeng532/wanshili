@@ -1,0 +1,37 @@
+@font-face{font-family:Prototype Noto;src:url(figma/noto-sc-400.ttf) format('truetype');font-weight:400;font-display:swap}
+@font-face{font-family:Prototype Noto;src:url(figma/noto-sc-600.ttf) format('truetype');font-weight:600;font-display:swap}
+@font-face{font-family:Prototype Noto;src:url(figma/noto-sc-700.ttf) format('truetype');font-weight:700;font-display:swap}
+#review-phone{width:390px;height:844px;flex-shrink:0;font-family:Prototype Noto,'Noto Sans SC','Microsoft YaHei',sans-serif;font-size:14px;line-height:normal;text-size-adjust:none;-webkit-text-size-adjust:none}
+#review-phone :is(input,button,select,textarea){font-family:inherit;font-size:inherit;letter-spacing:normal}
+#review-phone.flow-screen .row{width:100%;gap:12px;flex-wrap:nowrap}
+#review-phone.flow-screen .label{flex:0 0 82px;min-width:82px;white-space:nowrap}
+#review-phone.flow-screen .value{flex:1 1 0;min-width:0;max-width:205px;white-space:nowrap}
+#review-phone.flow-screen .input{min-width:0;width:190px;max-width:100%;margin-left:auto;line-height:normal}
+#review-phone.flow-screen .chev{flex:none}
+#review-phone.flow-screen .calcell{min-height:35px;padding:0;border:0;background:transparent;font-size:14px;border-radius:12px}
+#review-phone.flow-screen .calcell.selected{background:#54758a;color:white}
+#review-phone.flow-screen .nav b{min-width:0}
+#review-phone.flow-screen .hint{margin-top:24px;margin-bottom:0;line-height:1.5}
+#review-phone.flow-screen .tabs{height:50px;margin-bottom:22px;flex:none}
+#review-phone.flow-screen .ai{margin-top:24px;line-height:normal;gap:12px}
+#review-phone.flow-screen .ai .helper{line-height:1.65;white-space:normal}
+#review-phone.flow-screen .ai>div:not(.toggle){min-width:0}
+#review-phone.flow-screen .ai .toggle{width:44px;flex:0 0 44px}
+#review-phone.flow-screen .btn{font-family:inherit}
+#review-phone.flow-screen .pill{margin:0;display:inline-block}
+#review-phone.flow-screen .item b{max-width:115px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex-shrink:0}
+#review-phone.flow-screen .item small{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#review-phone .figma-icon{width:20px;height:20px;flex:none;display:block}
+#review-phone .ai .figma-icon{align-self:center}
+#review-phone .demo-input{border:0;outline:0;background:transparent;width:100%;min-width:0;padding:0;color:inherit;font:inherit;line-height:normal}
+#review-phone .demo-input:focus-visible{outline:2px solid #54758a;outline-offset:5px}
+#review-phone .demo-picker{display:block;width:100%;min-height:46px;padding:10px;border:1px solid #d8e1e6;border-radius:12px;background:#f8fafb;color:#263842;margin:16px 0}
+#review-phone .toggle.on{background:#54758a}#review-phone .toggle.on:before{transform:translateX(18px)}
+.web-demo #review-points,.web-demo #stage-note,.web-demo #review-lines{display:none!important}
+.web-demo #review-phone .annotation-target{outline:none!important}
+.web-demo #review-phone :is(.tab,.btn,.back,.plain,.plus,.item,.phone-row,.calcell,.day,.toggle,.sheet .row,.subfield,.month span,.month small){cursor:pointer}
+.web-demo #review-phone [role=button]:focus-visible{outline:2px solid #54758a!important;outline-offset:2px}
+#review-stage{overflow:auto;overscroll-behavior:contain}
+#review-phone{transform-origin:top left}
+.demo-canvas-spacer{pointer-events:none;position:absolute;left:0;top:0}
+@media(prefers-reduced-motion:no-preference){#review-phone .toggle:before{transition:transform .16s ease}}
