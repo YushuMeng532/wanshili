@@ -13,8 +13,20 @@ function radioRow(name,checked){return '<div class="row"><span>'+name+'</span><s
 function detail(){return base('事项详情','<div class="hero detail-hero">'+icon('book')+'<h3>相识纪念日</h3><span class="pill">正计时</span><div class="helper">从 2026年11月17日开始</div></div><div class="content detail-content">'+row('开始日期','2026年11月17日','cal',false)+row('正计时','第1天','cal',false)+row('AI开关','关闭（服务未接入）','spark',false)+row('备注','选填','note',false)+'<h3>日程状态</h3><div class="helper">过去日程自动已发生，历史保留可查看</div></div><div class="foot"><div class="btn outline">编辑事项</div><div class="center-title danger-text" style="font-size:14px">删除事项</div></div>','','up','编辑')}
 function home(){let cells=['一','二','三','四','五','六','日'].map(x=>'<div class="calcell weekday">'+x+'</div>').join('');for(let i=0;i<6;i++)cells+='<div class="calcell"></div>';for(let d=1;d<=30;d++)cells+='<div class="calcell '+(d===17?'selected':'')+'">'+d+'</div>';let items=[['相识纪念日','正计时 · 第1天','up','book'],['考试','倒数日 · 12月15日','down','cal'],['小林生日','生日 · 11月17日','birthday','gift']].map(([n,v,t,i])=>'<div class="item" style="--accent:'+colors[t][0]+';color:'+colors[t][0]+'"><span class="stripe"></span>'+icon(i)+'<b style="color:#263842">'+n+'</b><small>'+v+'</small><span style="margin-left:auto">›</span></div>').join('');return base('万事历','<div class="calendar"><div class="month"><span>‹</span><b>2026年11月</b><span>›</span><small>今天</small></div><div class="calgrid">'+cells+'</div></div><div class="items"><h3>11月17日 周二 <small class="helper">共3项</small></h3>'+items+'</div><div class="toast">✓ 已保存</div><div class="plus">＋</div><div class="bottomnav"><span>日历</span><span>统计</span><span>我的</span></div>','','up','')}
 
+function normalSchedulePreview(){
+ const selected='<div class="tabs"><div class="tab on" data-normal-button>普通日程</div><div class="tab">正计时</div><div class="tab">倒数日</div><div class="tab">生日</div></div>';
+ const body=selected+'<div class="content">'+
+  row('名称','<div class="input placeholder">请输入事项名称</div>','book',false)+
+  row('日期','2026年11月17日')+row('循环','仅一次','repeat')+
+  row('持续次数','1 次','flag',false)+
+  '<div class="hint">只在计划发生的日期显示日程</div>'+ai()+
+  row('备注','<div class="input placeholder">选填</div>','note',false)+'</div>';
+ return base('新建事项',body,'保存')+'<p class="normal-preview-caption">设计预览 · 待实现</p>';
+}
+
 const scenes=[
- ['3:8','02-01 新建 · 空表单',()=>form().replace('相识纪念日','<span class="placeholder">请输入事项名称</span>')],
+ ['3:8','02-01 新建 · 空表单（现有演示）',()=>form().replace('相识纪念日','<span class="placeholder">请输入事项名称</span>')],
+ ['review:normal','02-01 新建 · 普通日程（设计预览）',normalSchedulePreview,'down'],
  ['3:9','02-02 新建 · 正计时',()=>form()],
  ['3:10','02-03 新建 · 倒数日',()=>form('down'),'down'],
  ['3:11','02-04 新建 · 生日与历法',()=>form('birthday'),'birthday'],
@@ -45,6 +57,10 @@ for(const [id,name]of scenes){const option=document.createElement('option');opti
 $('screen').value=selectedBefore;
 
 setPrototype=function(node){
+ const preview=node==='review:normal';
+ $('open-prototype').hidden=preview;
+ $('mode-figma').disabled=preview;
+ if(preview)return;
  const real=({'review:fail':'3:4','review:count':'171:530','review:conflict':'171:744'})[node]||node;
  const url=new URL('https://www.figma.com/proto/'+CONFIG.figmaKey);
  url.search=new URLSearchParams({'node-id':real,'page-id':'2:2','starting-point-node-id':real,scaling:'scale-down','content-scaling':'fixed','show-proto-sidebar':node==='review:fail'?'1':'0'});
@@ -57,6 +73,7 @@ const oldReviewMode=setReviewMode;
 setReviewMode=function(value){oldReviewMode(value);if(!value&&$('prototype').dataset.source)$('prototype').src=$('prototype').dataset.source;updateAuditPanel()};
 
 const anchorLabels={
+ 'normal-schedule':'普通日程',
  'event-type':'事项类型切换','event-name':'名称输入','event-date':'日期与历法','event-repeat':'循环方式','event-duration':'结束条件','event-ai':'AI分析范围','event-save':'保存状态','event-item':'事项列表行','event-edit':'编辑入口','event-delete':'删除确认','event-discard':'未保存退出','event-error':'名称校验','event-scope':'修改范围','event-retry':'失败重试'
 };
 for(const [value,label]of Object.entries(anchorLabels)){const opt=document.createElement('option');opt.value=value;opt.textContent=label;$('note-anchor').append(opt)}
@@ -65,6 +82,7 @@ for(const n of reviewNotes){if(n.doc==='page-design'&&['3. 月历交互','5. 空
 
 function mark(el,anchor){if(!el)return;el.dataset.anchor=anchor;el.setAttribute('role','button');el.tabIndex=0;el.setAttribute('aria-label',anchorLabels[anchor]||anchor)}
 function annotateScene(phone,id){
+ if(id==='review:normal'){mark(phone.querySelector('[data-normal-button]'),'normal-schedule');return}
  const overlay=phone.querySelector('.overlay');
  if(overlay){
   const anchors={'3:12':'event-repeat','3:13':'event-duration','review:count':'event-repeat','review:conflict':'event-edit','137:3067':'event-date','137:3182':'event-repeat','137:3804':'event-repeat','137:3911':'event-repeat','3:17':'event-scope','3:18':'event-delete','137:3616':'event-discard'};

@@ -272,6 +272,17 @@
       ],
       "kind": "改动",
       "status": "V0.5 已确认规则"
+    },
+    {
+      "id": "normal-schedule-preview",
+      "anchor": "normal-schedule",
+      "doc": "prd",
+      "chapter": "3. 新建与循环",
+      "title": "新增「普通日程」按钮",
+      "text": "普通日程带入月历选中日期，默认仅一次，也可选择循环。日历和当天列表只在计划发生的日期显示该日程。",
+      "kind": "新增",
+      "status": "设计预览 · 待实现",
+      "screen": "review:normal"
     }
   ]
 }
