@@ -35,3 +35,6 @@
 #review-phone{transform-origin:top left}
 .demo-canvas-spacer{pointer-events:none;position:absolute;left:0;top:0}
 @media(prefers-reduced-motion:no-preference){#review-phone .toggle:before{transition:transform .16s ease}}
+
+.web-demo [data-marked=true]::after{content:"";display:block;width:3px;height:3px;border-radius:50%;background:currentColor;position:absolute;bottom:2px;left:calc(50% - 1px)}
+.web-demo [data-marked=true]{position:relative}

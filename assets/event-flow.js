@@ -3,38 +3,40 @@ const colors={up:['#747a58','#eef2e7'],down:['#54758a','#eaf3f9'],birthday:['#8f
 const paths={book:'M3 4c4-2 7-1 9 1 2-2 5-3 9-1v15c-4-2-7-1-9 1-2-2-5-3-9-1Z M12 5v15',cal:'M4 5h16v16H4Z M4 9h16 M8 2v5 M16 2v5',repeat:'M20 7a8 8 0 0 0-14-2L3 8 M3 3v5h5 M4 17a8 8 0 0 0 14 2l3-3 M21 21v-5h-5',flag:'M5 21V3c5-3 9 3 14 0v10c-5 3-9-3-14 0',gift:'M3 8h18v4H3Z M5 12v9h14v-9 M12 8v13 M12 8C3 8 6 0 10 4Z M12 8c9 0 6-8 2-4Z',note:'M5 3h14v18H5Z M8 8h8 M8 12h8 M8 16h5',spark:'m12 2 3 7 7 3-7 3-3 7-3-7-7-3 7-3Z'};
 function icon(n){return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="'+paths[n]+'"/></svg>'}
 function row(label,value,ico='cal',arrow=true){return '<div class="row">'+icon(ico)+'<span class="label">'+label+'</span><span class="value">'+value+'</span>'+(arrow?'<span class="chev">›</span>':'')+'</div>'}
-function ai(){return '<div class="ai">'+icon('spark')+'<div><b>参与 AI 习惯分析</b><div class="helper">开启后用于漏记提醒，建议需你确认</div></div><div class="toggle"></div></div>'}
+function ai(){return '<div class="ai">'+icon('spark')+'<div><b>参与 AI 习惯分析</b><div class="helper">仅保存开关，AI服务尚未接入</div></div><div class="toggle"></div></div>'}
 function base(title,body,button='保存',type='up',navRight='取消'){return '<div class="status"><span>9:41</span><span>● ▰</span></div><div class="nav"><span class="back">‹</span><b>'+title+'</b><span class="plain">'+navRight+'</span></div>'+body+(button?'<div class="foot"><div class="btn">'+button+'</div></div>':'')+'<div class="homebar"></div>'}
 function tabs(type){return '<div class="tabs">'+[['up','正计时'],['down','倒数日'],['birthday','生日']].map(([k,v])=>'<div class="tab '+(k===type?'on':'')+'">'+v+'</div>').join('')+'</div>'}
-function form(type='up',opts={}){let birthday=type==='birthday',down=type==='down';let name=opts.empty?'<span class="placeholder">请输入事项名称</span>':(opts.edit?'晚间阅读':birthday?'小林生日':down?'考试':'阅读');let b=tabs(type)+'<div class="content">'+row('名称','<div class="input '+(opts.empty?'error':'')+'">'+name+'</div>',birthday?'gift':'book',false)+(opts.empty?'<div class="errorline">请填写事项名称</div>':'');if(birthday)b+=row('日期类型','<span class="pill">公历</span>　农历','cal',false);b+=row(birthday?'生日日期':down?'目标日期':'开始日期',birthday?'12月8日':down?'2026年12月15日':'2026年11月17日');b+=row('循环',birthday?'每年':opts.edit?'每周一、三、五':down?'仅一次':'每天','repeat',!birthday);if(!down&&!birthday)b+=row('结束条件','不设结束','flag');b+='<div class="hint">'+(birthday?'每年提醒这一天':down?'展示距离目标日期的天数':'从开始日期累计天数')+'</div>'+ai()+row('备注','<div class="input placeholder">'+(opts.edit?'睡前阅读':'选填')+'</div>','note',false)+'</div>';return base(opts.edit?'编辑事项':'新建事项',b,opts.saving?'保存中…':opts.edit?'保存修改':'保存',type)}
+function form(type='up',opts={}){const birthday=type==='birthday',down=type==='down',name=opts.empty?'<span class="placeholder">请输入事项名称</span>':birthday?'小林生日':down?'考试':'相识纪念日';let b=tabs(type)+'<div class="content">'+row('名称','<div class="input '+(opts.empty?'error':'')+'">'+name+'</div>',birthday?'gift':'book',false)+(opts.empty?'<div class="errorline">请填写事项名称</div>':'');if(birthday)b+=row('日期类型','<span class="pill">公历</span>　农历未接入','cal',false);b+=row(birthday?'生日日期':down?'目标日期':'开始日期',birthday?'12月8日':down?'2026年12月15日':'2026年11月17日');if(type!=='up')b+=row('循环',birthday?'每年':'仅一次','repeat',!birthday)+row('持续次数',birthday?'不设结束':'1 次','flag',birthday);b+='<div class="hint">'+(birthday?'每年提醒这一天':down?'按选中日期显示倒数，仅归零日标记日历':'开始当天第1天，按选中日期累计自然日')+'</div>'+ai()+row('备注','<div class="input placeholder">选填</div>','note',false)+'</div>';return base(opts.edit?'编辑事项':'新建事项',b,opts.saving?'保存中…':opts.edit?'保存修改':'保存',type)}
 function shell(id,name,html,type='up'){return '<div><article class="screen" id="'+id+'" data-name="'+name+'" style="--accent:'+colors[type][0]+';--tint:'+colors[type][1]+'">'+html+'</article><div class="caption">'+name+'</div></div>'}
 function sheet(title,inside){return '<div class="overlay"><div class="sheet"><div class="handle"></div><div class="sheet-title">'+title+'</div>'+inside+'</div></div>'}
 function radioRow(name,checked){return '<div class="row"><span>'+name+'</span><span class="radio '+(checked?'checked':'')+'"></span></div>'}
-function detail(){return base('事项详情','<div class="hero detail-hero">'+icon('book')+'<h3>阅读</h3><span class="pill">正计时</span><div class="helper">从 2026年11月17日开始</div></div><div class="content detail-content">'+row('开始日期','2026年11月17日','cal',false)+row('循环','每天','repeat',false)+row('结束条件','不设结束','flag',false)+row('AI习惯分析','未参与','spark',false)+row('备注','每天读一点','note',false)+'<h3>当天记录</h3><div class="row">◯　确认今天已记录</div><div class="helper"></div></div><div class="foot"><div class="btn outline">编辑事项</div><div class="center-title danger-text" style="font-size:14px">删除事项</div></div>','','up','编辑')}
-function home(){let cells=['一','二','三','四','五','六','日'].map(x=>'<div class="calcell weekday">'+x+'</div>').join('');for(let i=0;i<6;i++)cells+='<div class="calcell"></div>';for(let d=1;d<=30;d++)cells+='<div class="calcell '+(d===17?'selected':'')+'">'+d+'</div>';let items=[['晚间阅读','正计时 · 每周一三五','up','book'],['考试','倒数日 · 12月15日','down','cal'],['小林生日','生日 · 12月8日','birthday','gift']].map(([n,v,t,i])=>'<div class="item" style="--accent:'+colors[t][0]+';color:'+colors[t][0]+'"><span class="stripe"></span>'+icon(i)+'<b style="color:#263842">'+n+'</b><small>'+v+'</small><span style="margin-left:auto">›</span></div>').join('');return base('万事历','<div class="calendar"><div class="month"><span>‹</span><b>2026年11月</b><span>›</span><small>今天</small></div><div class="calgrid">'+cells+'</div></div><div class="items"><h3>11月17日 周二 <small class="helper">共3项</small></h3>'+items+'</div><div class="toast">✓ 已保存</div><div class="plus">＋</div><div class="bottomnav"><span>日历</span><span>统计</span><span>我的</span></div>','','up','')}
+function detail(){return base('事项详情','<div class="hero detail-hero">'+icon('book')+'<h3>相识纪念日</h3><span class="pill">正计时</span><div class="helper">从 2026年11月17日开始</div></div><div class="content detail-content">'+row('开始日期','2026年11月17日','cal',false)+row('正计时','第1天','cal',false)+row('AI开关','关闭（服务未接入）','spark',false)+row('备注','选填','note',false)+'<h3>日程状态</h3><div class="helper">过去日程自动已发生，历史保留可查看</div></div><div class="foot"><div class="btn outline">编辑事项</div><div class="center-title danger-text" style="font-size:14px">删除事项</div></div>','','up','编辑')}
+function home(){let cells=['一','二','三','四','五','六','日'].map(x=>'<div class="calcell weekday">'+x+'</div>').join('');for(let i=0;i<6;i++)cells+='<div class="calcell"></div>';for(let d=1;d<=30;d++)cells+='<div class="calcell '+(d===17?'selected':'')+'">'+d+'</div>';let items=[['相识纪念日','正计时 · 第1天','up','book'],['考试','倒数日 · 12月15日','down','cal'],['小林生日','生日 · 11月17日','birthday','gift']].map(([n,v,t,i])=>'<div class="item" style="--accent:'+colors[t][0]+';color:'+colors[t][0]+'"><span class="stripe"></span>'+icon(i)+'<b style="color:#263842">'+n+'</b><small>'+v+'</small><span style="margin-left:auto">›</span></div>').join('');return base('万事历','<div class="calendar"><div class="month"><span>‹</span><b>2026年11月</b><span>›</span><small>今天</small></div><div class="calgrid">'+cells+'</div></div><div class="items"><h3>11月17日 周二 <small class="helper">共3项</small></h3>'+items+'</div><div class="toast">✓ 已保存</div><div class="plus">＋</div><div class="bottomnav"><span>日历</span><span>统计</span><span>我的</span></div>','','up','')}
 
 const scenes=[
- ['3:8','02-01 新建 · 空表单',()=>form().replace('阅读','<span class="placeholder">请输入事项名称</span>')],
+ ['3:8','02-01 新建 · 空表单',()=>form().replace('相识纪念日','<span class="placeholder">请输入事项名称</span>')],
  ['3:9','02-02 新建 · 正计时',()=>form()],
  ['3:10','02-03 新建 · 倒数日',()=>form('down'),'down'],
  ['3:11','02-04 新建 · 生日与历法',()=>form('birthday'),'birthday'],
- ['3:12','02-05 循环设置',()=>form()+sheet('循环方式 <span class="plain">完成</span>',['仅一次','每天','每周','每月','每年','仅工作日','仅周末'].map(x=>radioRow(x,x==='每天')).join('')+'<p class="helper">仅工作日按中国法定节假日与调休安排计算</p>')],
- ['3:13','02-06 正计时 · 结束条件',()=>form()+sheet('结束条件',radioRow('不设结束',true)+radioRow('持续天数',false)+'<div class="subfield"><span>持续</span><b>30 天</b></div><div class="btn">完成</div>')],
+ ['3:12','02-05 循环设置',()=>form('down')+sheet('循环方式 <span class="plain">完成</span>',['仅一次','每天','每周','每月','每年','仅工作日','仅周末'].map(x=>radioRow(x,x==='每天')).join('')+'<p class="helper">调休日历暂未接入，不使用星期代算</p>')],
+ ['3:13','02-06 正计时 · 纪念日说明',()=>form()+sheet('正计时 · 纪念日','<p class="helper">只选择开始日期，当天为第1天。<br>不设置循环、结束日期或持续次数。<br>日历只标开始日，下方按选中日累计。</p><div class="btn">完成</div>')],
  ['137:3067','02 补充 · 日期选择',()=>form()+sheet('开始日期','<div class="wheel">'+[['2025年','10月','16日'],['2026年','11月','17日'],['2027年','12月','18日']].map((a,i)=>'<div class="wheel-line '+(i===1?'selected':'')+'">'+a.map(x=>'<span>'+x+'</span>').join('')+'</div>').join('')+'</div><div class="btn">确认日期</div>')],
- ['137:3182','02 补充 · 每周星期',()=>form()+sheet('每周重复','<p class="helper">选择事项出现的星期</p><div class="days">'+['一','二','三','四','五','六','日'].map((x,i)=>'<span class="day '+([0,2,4].includes(i)?'selected':'')+'">'+x+'</span>').join('')+'</div><div class="btn">完成</div>')],
- ['137:3804','02 补充 · 每月规则',()=>form()+sheet('每月重复',row('日期','每月17日')+'<div class="btn">完成</div>')],
- ['137:3911','02 补充 · 每年规则',()=>form()+sheet('每年重复',row('月份','11月')+row('日期','17日')+'<div class="btn">完成</div>')],
+ ['137:3182','02 补充 · 每周星期',()=>form('down')+sheet('每周重复','<p class="helper">选择事项出现的星期</p><div class="days">'+['一','二','三','四','五','六','日'].map((x,i)=>'<span class="day '+([0,2,4].includes(i)?'selected':'')+'">'+x+'</span>').join('')+'</div><div class="btn">完成</div>')],
+ ['137:3804','02 补充 · 每月规则',()=>form('down')+sheet('每月重复',row('日期','每月17日')+'<div class="btn">完成</div>')],
+ ['137:3911','02 补充 · 每年规则',()=>form('down')+sheet('每年重复',row('月份','11月')+row('日期','17日')+'<div class="btn">完成</div>')],
  ['137:3293','02 补充 · 农历生日',()=>form('birthday').replace('<span class="pill">公历</span>　农历','公历　<span class="pill">农历</span>').replace('12月8日','冬月初八'),'birthday'],
  ['137:3529','02 补充 · 名称未填',()=>form('up',{empty:true})],
  ['3:15','03-01 事项详情',()=>detail()],
  ['3:16','03-02 编辑事项',()=>form('up',{edit:true})],
- ['3:17','03-03 修改循环范围',()=>form('up',{edit:true})+sheet('将修改应用于',radioRow('仅这一次',true)+radioRow('这次及之后',false)+'<p class="helper">请确认修改范围，再保存本次更改。</p><div class="btn">确认保存</div>')],
- ['3:18','03-04 删除确认',()=>detail()+sheet('删除这条事项？','<p class="helper">晚间阅读 · 每周一、三、五</p>'+radioRow('仅这一次',true)+radioRow('整个系列',false)+'<p class="helper">删除前，请确认要移除的事项范围。</p><div class="split"><div class="btn outline">取消</div><div class="btn danger">确认删除</div></div>')],
+ ['3:17','03-03 修改循环范围',()=>form('up',{edit:true})+sheet('将修改应用于',radioRow('仅这一次',true)+radioRow('这次及之后',false)+radioRow('整个系列',false)+'<p class="helper">确认后覆盖对应未过去数据，过去日程保留。</p><div class="btn">确认保存</div>')],
+ ['3:18','03-04 删除确认',()=>detail()+sheet('删除这条事项？','<p class="helper">相识纪念日 · 纪念日 · 按自然日累计</p>'+radioRow('仅这一次',true)+radioRow('这次及之后',false)+radioRow('整个系列',false)+'<p class="helper">取消对应未过去计划，过去日程保留可查看。</p><div class="split"><div class="btn outline">取消</div><div class="btn danger">确认删除</div></div>')],
  ['137:3616','03 补充 · 未保存退出',()=>form('up',{edit:true})+'<div class="overlay"><div class="dialog"><h3>放弃本次修改？</h3><p>修改内容尚未保存。</p><div class="btn">继续编辑</div><div class="plain">放弃修改</div></div></div>'],
  ['137:4025','03 补充 · 保存中',()=>form('up',{edit:true,saving:true})],
  ['137:3376','03 补充 · 保存成功',()=>home()],
  ['138:6590','03 补充 · 返回当天',()=>home().replace(/<div class="toast">.*?<\/div>/,'')],
- ['144:7580','03 补充 · 删除后剩余两项',()=>home().replace(/<div class="toast">.*?<\/div>/,'').replace(/<div class="item"[^>]*>.*?晚间阅读.*?<\/div>/,'').replace('共3项','共2项')],
+ ['144:7580','03 补充 · 删除后剩余两项',()=>home().replace(/<div class="toast">.*?<\/div>/,'').replace(/<div class="item"[^>]*>.*?相识纪念日.*?<\/div>/,'').replace('共3项','共2项')],
+ ['review:count','02 补充 · 持续次数',()=>form('down')+sheet('持续次数','<div class="subfield"><b>3 次</b></div><p class="helper">按计划出现次数计算，月末回退算1次。<br>跳过2月29日不占次数；仅一次固定为1。</p><div class="btn">完成</div>')],
+ ['review:conflict','03 补充 · 标签页冲突',()=>detail()+'<div class="overlay"><div class="dialog"><h3>此事项正在另一标签页编辑</h3><p>请关闭其中一个标签页后继续。</p><div class="btn">返回详情</div></div></div>'],
  ['review:fail','03 补充 · 保存失败',()=>form('up',{edit:true}).replace('<div class="foot"><div class="btn">保存修改</div></div>','<div class="foot"><div class="errorbox"><b>保存失败，请重试</b><div>填写内容已保留</div></div><div class="btn">重试保存</div></div>')]
 ];
 const sceneMap=new Map(scenes.map(s=>[s[0],s]));
@@ -43,7 +45,7 @@ for(const [id,name]of scenes){const option=document.createElement('option');opti
 $('screen').value=selectedBefore;
 
 setPrototype=function(node){
- const real=node==='review:fail'?'3:4':node;
+ const real=({'review:fail':'3:4','review:count':'171:530','review:conflict':'171:744'})[node]||node;
  const url=new URL('https://www.figma.com/proto/'+CONFIG.figmaKey);
  url.search=new URLSearchParams({'node-id':real,'page-id':'2:2','starting-point-node-id':real,scaling:'scale-down','content-scaling':'fixed','show-proto-sidebar':node==='review:fail'?'1':'0'});
  $('open-prototype').href=url.href;$('fallback-prototype').href=url.href;
@@ -65,13 +67,13 @@ function mark(el,anchor){if(!el)return;el.dataset.anchor=anchor;el.setAttribute(
 function annotateScene(phone,id){
  const overlay=phone.querySelector('.overlay');
  if(overlay){
-  const anchors={'3:12':'event-repeat','3:13':'event-duration','137:3067':'event-date','137:3182':'event-repeat','137:3804':'event-repeat','137:3911':'event-repeat','3:17':'event-scope','3:18':'event-delete','137:3616':'event-discard'};
+  const anchors={'3:12':'event-repeat','3:13':'event-duration','review:count':'event-repeat','review:conflict':'event-edit','137:3067':'event-date','137:3182':'event-repeat','137:3804':'event-repeat','137:3911':'event-repeat','3:17':'event-scope','3:18':'event-delete','137:3616':'event-discard'};
   mark(overlay.querySelector('.sheet,.dialog'),anchors[id]);return;
  }
  if(id==='3:15'){mark(phone.querySelector('.foot .btn'),'event-edit');mark(phone.querySelector('.nav .plain'),'event-edit');mark(phone.querySelector('.danger-text'),'event-delete');return}
  if(['137:3376','138:6590','144:7580'].includes(id)){mark(phone.querySelector('.item'),'event-item');mark(phone.querySelector('.plus'),'add');return}
  mark(phone.querySelector('.tabs'),'event-type');
- for(const el of phone.querySelectorAll('.row')){const label=el.querySelector('.label')?.textContent.trim();const anchor={'名称':'event-name','开始日期':'event-date','目标日期':'event-date','生日日期':'event-date','日期类型':'event-date','循环':'event-repeat','结束条件':'event-duration'}[label];if(anchor)mark(el,anchor)}
+ for(const el of phone.querySelectorAll('.row')){const label=el.querySelector('.label')?.textContent.trim();const anchor={'名称':'event-name','开始日期':'event-date','目标日期':'event-date','生日日期':'event-date','日期类型':'event-date','循环':'event-repeat','持续次数':'event-repeat','结束条件':'event-duration'}[label];if(anchor)mark(el,anchor)}
  mark(phone.querySelector('.ai'),'event-ai');
  if(id==='3:15'){mark(phone.querySelector('.foot .btn'),'event-edit');mark(phone.querySelector('.danger-text'),'event-delete')}
  else if(id==='review:fail')mark(phone.querySelector('.foot'),'event-retry');
