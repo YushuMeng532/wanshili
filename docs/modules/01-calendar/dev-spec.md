@@ -51,3 +51,9 @@ SummaryService从当月occurred原记录计算date集合：按事项取集合，
 Figma底部面板使用匹配图层的Smart Animate。网页演示与标注模式分开：演示模式接受名称、日期、备注与星期选择，支持会话内新增、修改、删除和失败重试；标注模式保留章节定位。表单按390 × 844画板布局后整体等比缩放，使用同源Noto Sans SC字体子集。
 
 网页保存的是当前页面中的演示状态；刷新后重置。农历换算、法定假调休、循环实例生成、作用范围的数据处理和月度统计仍待产品实现。
+
+## 7. 独立前端演示
+
+`app.html`、`assets/product-app.js`、`assets/product-app.css`为独立的产品前端入口，与评审工作台分开。使用浏览器本地适配器存储Event、DailyRecord和Settings；写入成功后才更新界面，失败保留旧数据和草稿。DailyRecord以eventId和date组合为唯一键，统计按occurred日期去重，并提供截至今天的待确认日期入口。
+
+本轮不接入AI服务、农历转换或假调休数据。系列修改与删除仅实现单次例外，其余范围选项显示待确认。完整问题与暂定处理口径见[实现问题汇总](../../implementation-review.md)。

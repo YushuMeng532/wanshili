@@ -1,0 +1,14 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#54758a"><title>万事历 · 记下日常，也记住重要的日子</title><meta name="description" content="万事历前端演示：月历、正计时、倒数日、生日与每日记录。"><link rel="stylesheet" href="assets/product-app.css?v=1"></head>
+<body>
+<a class="skip" href="#main">跳到主要内容</a>
+<div class="app-shell">
+ <aside class="sidebar"><a class="brand" href="app.html"><span class="brand-symbol" data-icon="calendar"></span><span>万事历<small>让每一天，有迹可循</small></span></a><div class="nav-label">我的日常</div><nav class="primary-nav" aria-label="主导航"><button data-page="calendar" class="active"><span data-icon="calendar"></span>日历</button><button data-page="stats"><span data-icon="chart"></span>统计</button><button data-page="settings"><span data-icon="user"></span>我的</button></nav><div class="sidebar-bottom"><div class="quiet-note"><span data-icon="leaf"></span><p>记录一件小事，<br>给日常留一点回响。</p></div><a href="index.html" class="workbench-link"><span data-icon="layers"></span>需求与原型工作台</a><span class="local-label">前端演示 · 数据保存在此设备</span></div></aside>
+ <main id="main" class="main-area"><header class="main-header"><div><div class="eyebrow" id="page-kicker">YOUR EVERYDAY</div><h1 id="page-title">日历</h1><p id="page-description">日常的小事，值得被记住。</p></div><div class="header-actions"><span class="saved-indicator" id="storage-status">本地自动保存</span><button class="primary" id="header-add"><span data-icon="plus"></span>新建事项</button></div></header><section id="page-content" aria-label="页面内容"></section><footer class="app-footer">万事历 <span>把计划和真实发生的日子，分别记好。</span><a href="index.html">查看项目工作台</a></footer></main>
+</div>
+<nav class="mobile-nav" aria-label="手机导航"><button data-page="calendar" class="active"><span data-icon="calendar"></span>日历</button><button data-page="stats"><span data-icon="chart"></span>统计</button><button data-page="settings"><span data-icon="user"></span>我的</button></nav>
+<dialog id="day-dialog" class="day-dialog" aria-label="当天事项"></dialog>
+<dialog id="event-dialog" class="event-dialog" aria-labelledby="event-dialog-title"></dialog>
+<dialog id="sub-dialog" class="sub-dialog" aria-labelledby="sub-title"></dialog>
+<div id="app-toast" role="status" aria-live="polite" hidden></div>
+<script src="assets/product-app.js?v=1"></script></body></html>
