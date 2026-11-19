@@ -57,7 +57,7 @@ function enhance(){const id=$('screen').value;phone.dataset.mode=playing?'demo':
  if(id==='137:4025')saveTimer=setTimeout(commit,450);
 }
 const oldRender=renderPhone;renderPhone=function(){oldRender();const overlay=phone.querySelector('.overlay');if(playing&&overlay&&layerBase)phone.innerHTML=layerBase+overlay.outerHTML;enhance();fitPhone()};
-fitPhone=function(){if(!reviewMode)return;const box=stage.getBoundingClientRect(),notes=!playing&&box.width>620,reserve=notes?210:32;
+fitPhone=function(){if(!reviewMode)return;const box={width:stage.clientWidth,height:stage.clientHeight},notes=!playing&&box.width>620,reserve=notes?210:32;
  const auto=Math.min((box.width-reserve)/390,(box.height-36)/844,1),scale=reviewScale==='fit'?Math.max(.1,auto):Number(reviewScale);
  const width=390*scale,height=844*scale,left=notes?Math.max(200,(box.width-width+180)/2):Math.max(16,(box.width-width)/2);
  phone.style.left=left+'px';phone.style.top='18px';phone.style.transform='scale('+scale+')';
