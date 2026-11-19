@@ -1,59 +1,51 @@
 # 万事历 MVP 开发说明
-版本：V0.4 · 更新：2026-11-19
+版本：V0.5 · 确认日期：2026-11-19
 
-关联：[PRD](./prd.md)、[页面设计](./page-design.md)、[验证记录](./validation.md)。
+关联：[PRD](./prd.md)、[开发说明](./dev-spec.md)、[页面设计](./page-design.md)、[原型](./prototype.md)、[验证记录](./validation.md)。
 
 ## 1. 实现位置与边界
 
-| 内容 | 当前文件 |
+| 文件 | 职责 |
 | --- | --- |
-| 双栏、Markdown、章节复制与批注线 | `index.html` |
-| 事项页面与批注锚点 | `assets/event-flow.js` |
-| 网页演示状态、输入和保存/编辑/删除 | `assets/web-demo.js` |
-| 画板布局、同源字体与缩放 | `assets/web-demo.css`、`assets/figma/` |
-| 新增页面样式 | `assets/event-flow.css` |
-| 共享批注与页面锚点 | `wanshili-annotations.json` |
-| 产品规则与验证 | 本目录Markdown |
+| `app.html`、`assets/product-app.js`、`assets/product-app.css` | 独立产品前端与本地Repository |
+| `assets/event-rules.js` | 选中日计算、计划实例、标记/列表分离、范围操作与统计的公共规则 |
+| `index.html`、`assets/event-flow.js`、`assets/web-demo.js` | 工作台原型、交互、批注和文档定位 |
+| `wanshili-annotations.json` | 页面锚点与文档章节绑定 |
 
-当前代码承担原型评审。下列对象与方法为产品开发契约；事项持久化、循环计算和统计服务尚未接入。
+保留现有视觉设计；浏览器本地保存可用，当前不接入农历、假调休和AI服务。
 
 ## 2. 数据与唯一性
 
-| 对象 | 字段与约束 |
-| --- | --- |
-| Event | id、title、type、date、calendarType、recurrence、endCondition、aiIncluded、createdAt、updatedAt |
-| Recurrence | frequency、weekdays、monthDay、yearMonth、yearDay |
-| DailyRecord | eventId、date、status、note、createdAt、updatedAt；eventId+date唯一 |
-| OccurrenceException | eventId、date、override或cancelled；单次循环修改的覆盖记录 |
-| Settings | aiEnabled=false、schemaVersion |
-| HolidayCalendar | year、date、isWorkday、source、version |
+Event保留id、title、type、date、calendarType、recurrence、aiIncluded、note与时间戳。正计时recurrence.frequency=none，不保留endCondition。其他类型endCondition表示计划出现次数，可为空代表不设结束；仅一次时固定为1。
 
-日期使用YYYY-MM-DD，时间戳独立。DailyRecord的status为occurred或not_occurred；缺记录代表未记录。保留生日原历法日期，换算结果可重算。
+历史由segments记录生效区间，区间为[from,to)；value保存当时配置。exceptions用日期为键记录单次override或cancelled。系列覆盖前保留今天之前的配置区间；取消后的Event仍保留，供统计和历史查看。
+
+过去日程状态由planDate < today派生为occurred，不再读取或写入人工DailyRecord状态。Settings保存aiEnabled，存储根对象保存schemaVersion。V0.5使用schemaVersion=2；开发阶段版本不一致时清除本应用旧数据后初始化。
 
 ## 3. 保存与状态流转
 
-`editing → validating → saving → saved`；校验失败回表单，保存失败进入save_error并保留草稿。`saving`时拒绝重复提交；持久化成功后才更新列表。取消修改丢弃草稿，取消删除不写数据。
+草稿与已保存Event分开。子层完成只更新草稿，取消保持原值；主表单保存后才提交Repository。状态为editing → validating → saving → saved或save_error。保存期间禁止重复提交和更改表单；写入失败保留原数据与草稿。
 
-内部方法：`saveEvent`、`saveRecord`、`getOccurrences`、`deleteOccurrence`、`getMonthSummary`。统一经Repository读写，先用本地适配器；错误返回code、message和fieldErrors。后端接入时再定义HTTP协议。
+编辑同一Event使用浏览器Web Locks的独占锁，锁键为eventId。取不到锁时不打开编辑器，提示另一个标签页正在编辑，请关闭其中一个标签页后继续。关闭表单或标签页释放锁；写入前读取最新存储，避免不同事项互相覆盖。
 
 ## 4. 循环与统计
 
-RecurrenceService生成计划实例，单次修改用例外覆盖；系列修改和删除的历史处理在业务规则确认后落地。缺少假调休年份数据返回`HOLIDAY_DATA_MISSING`，特殊日期不静默代算。
+marked用于日历格，shown用于下方列表，occurrence用于计划实例；不得用一个查询同时替代三者。
 
-SummaryService从当月occurred原记录计算date集合：按事项取集合，按类型取并集，全月再取并集。未记录日期来自截至今天的计划实例缺确认记录。保存、修改、补录或删除后重算受影响月份，不独立维护合计副本。
+正计时：shown在选中日不早于开始日时返回；marked只在开始日返回；显示天数=公历日期差+1。倒数日：marked仅返回归零计划实例；shown允许其他日期展示倒数，数字以选中日为基准。生日按公历年度实例显示。
+
+每月目标日=min(配置日期,当月最后一天)。所有实例生成前排除02-29；回退至02-29也跳过。缺调休日历返回HOLIDAY_DATA_MISSING，不使用星期推算替代；农历配置不进入实例生成。
+
+范围one只写选中日例外；following以max(selectedDate,today)为边界覆盖后续；series以today为边界覆盖全部未过去区间。三者都保留历史区间及历史例外。单次改日期时取消原位置，并在新日期建立覆盖实例。
+
+统计遍历当月day < today的occurrence，按事项、类型、全月分别取日期集合。历史类型从当时segment读取。所有过去日程自动视为已发生，不生成待确认列表，不接受手动状态写入。
 
 ## 5. AI与数据保护
 
-先检查全局开关，再筛aiIncluded；排除项的名称、备注及历史和未来记录均不进入分析。全局关闭保留单项偏好，写入建议前复查冲突并要求确认。数据迁移或读取失败保留旧数据，不能清空后假装成功。
+只持久化全局和单项开关；全局默认关闭，关闭时保留单项偏好。不调用AI、不生成建议或提醒。
 
-## 6. 原型差异
+读取格式异常时显示保存不可用，写入失败不覆盖旧数据。版本变化直接重置仅适用于当前未上线开发阶段，不作为上线后迁移方案。
 
-Figma底部面板使用匹配图层的Smart Animate。网页演示与标注模式分开：演示模式接受名称、日期、备注与星期选择，支持会话内新增、修改、删除和失败重试；标注模式保留章节定位。表单按390 × 844画板布局后整体等比缩放，使用同源Noto Sans SC字体子集。
+## 6. 产品与原型的对应
 
-网页保存的是当前页面中的演示状态；刷新后重置。农历换算、法定假调休、循环实例生成、作用范围的数据处理和月度统计仍待产品实现。
-
-## 7. 独立前端演示
-
-`app.html`、`assets/product-app.js`、`assets/product-app.css`为独立的产品前端入口，与评审工作台分开。使用浏览器本地适配器存储Event、DailyRecord和Settings；写入成功后才更新界面，失败保留旧数据和草稿。DailyRecord以eventId和date组合为唯一键，统计按occurred日期去重，并提供截至今天的待确认日期入口。
-
-本轮不接入AI服务、农历转换或假调休数据。系列修改与删除仅实现单次例外，其余范围选项显示待确认。完整问题与暂定处理口径见[实现问题汇总](../../implementation-review.md)。
+产品前端执行真实输入、本地保存、范围计算、自动发生与统计。工作台页面快照和Figma按同一V0.5规则展示，固定示例用于评审，不承担运行时日期或持久化计算。正计时表单移除循环与持续次数，详情移除人工状态按钮，范围面板补齐三种选择，AI和未接入能力有明确说明。

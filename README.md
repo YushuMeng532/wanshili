@@ -1,43 +1,39 @@
 # 万事历
-每天轻松记录，月末查看各类事项实际发生了多少天。
 
-正计时、倒数日和生日共用一张日历，支持同日多项。产品主线为“创建事项—每日确认—月度汇总—明细核对”。
+把纪念日、倒数日和生日放进一张日历，查看选中日期的时间进度，并回顾过去日程。
 
-[在线产品工作台](https://yushumeng532.github.io/wanshili/) · [Figma交互演示](https://www.figma.com/proto/8aE2Z9hUhKtxgXjnEuCY7I?node-id=3-4&page-id=2%3A2&starting-point-node-id=3%3A4&scaling=scale-down&content-scaling=fixed&show-proto-sidebar=1) · [设计文件](https://www.figma.com/design/8aE2Z9hUhKtxgXjnEuCY7I?node-id=2-2)
+[产品前端](https://yushumeng532.github.io/wanshili/app.html) · [需求与原型工作台](https://yushumeng532.github.io/wanshili/) · [Figma设计](https://www.figma.com/design/8aE2Z9hUhKtxgXjnEuCY7I?node-id=2-2)
 
-## 产品文档
+## 当前版本 V0.5
 
-| 文档 | 内容 |
+保留现有蓝、粉、绿界面。支持选择日期、新建事项、循环、详情、修改、删除与月度统计，事项保存在当前浏览器。
+
+- 正计时用于纪念日，只设开始日期，当天为第1天；天数跟随选中日期。
+- 倒数日只在归零日标记日历，其他日期在下方显示倒数。
+- 过去计划自动视为已发生；统计按日期去重，不再人工确认发生状态。
+- 修改、删除支持仅这一次、这次及之后、整个系列，始终保留过去日程。
+- 每月日期不足回退月末；仅跳过公历2月29日，其余闰年日期正常。
+
+农历、法定假调休和AI服务未接入。AI仅保存全局与单项开关。开发版本升级会重置本应用旧数据；同一事项跨标签页编辑时阻止冲突并提示关闭一个标签页。
+
+## 文档与原型
+
+| 入口 | 内容 |
 | --- | --- |
-| [PRD](docs/modules/01-calendar/prd.md) | 按页面说明用户动作、产品行为与规则 |
-| [Dev Spec](docs/modules/01-calendar/dev-spec.md) | 数据、保存、循环及统计契约 |
-| [页面设计](docs/modules/01-calendar/page-design.md) | 页面布局、状态与动效 |
-| [验证记录](docs/modules/01-calendar/validation.md) | 按日期记录实测过程和结果 |
-| [校验说明](docs/modules/01-calendar/checks.md) | 原型锚点与文档的对应关系 |
-| [原型与流程](docs/modules/01-calendar/prototype.md) | 页面索引、流程图与演示入口 |
-| [竞品研究](docs/research.md) | 六个样本的能力如何转成产品取舍 |
+| [PRD](docs/modules/01-calendar/prd.md) | 用户动作、产品行为与业务规则 |
+| [Dev Spec](docs/modules/01-calendar/dev-spec.md) | 数据、计划计算、范围操作和保存 |
+| [页面设计](docs/modules/01-calendar/page-design.md) | 布局、状态与动效 |
+| [原型与流程](docs/modules/01-calendar/prototype.md) | 画框索引和交互入口 |
+| [验证记录](docs/modules/01-calendar/validation.md) | 实测范围、结果与限制 |
+| [规则确认结果](docs/implementation-review.md) | 本轮12项规则及处理方式 |
+| [竞品研究](docs/research.md) | 产品取舍的研究依据 |
 
-## V0.4 更新
+工作台默认进入可交互网页原型；切换标注模式可通过编号和连线定位文档。原型使用390 × 844画框等比缩放。网页原型用于流程评审，完整本地保存与统计请打开产品前端。
 
-新增新建表单、日期与循环子层、详情、编辑、未保存确认、删除和保存反馈。界面已归入原 Figma 的 02、03 模块，核心跳转已实际点击验证；工作台可选对应页面，批注连接至相关章节。
+## 修改与运行
 
-| 交付 | 当前状态 |
-| --- | --- |
-| 双栏工作台 | 已上线；支持章节复制、批注和锚点校验 |
-| 创建到删除 | 网页支持填写、新建、详情、编辑与删除；演示数据在本次页面中保留 |
-| 每日确认与月末统计 | 需求与数据口径已定义，待设计开发 |
-| 经期记录、AI漏记询问与分析范围 | 保留后续模块，待细化 |
+分支修改 → 创建PR → 查看差异 → 合并 → GitHub Pages部署。业务规则变化同步PRD、Spec、页面设计和原型；验证记录只记录实际执行结果。
 
-## 协作与启动
+本地在仓库根目录运行 `python -m http.server 8765`，打开 `http://localhost:8765/` 或 `http://localhost:8765/app.html`。
 
-分支修改 → PR查看差异 → 合并 → GitHub Pages部署。页面改动同步PRD、设计和验证；数据规则改动同步Spec。当前有效文档沿用固定路径，历史由Git保存。
-
-本地运行 `python -m http.server 8765`，打开 http://localhost:8765/ 。工作台由HTML、CSS、JavaScript和Markdown组成，批注存储与产品事项数据相互独立。
-
-下一步补齐真实输入与本地保存，再验证“每日确认—月末天数—明细修改”。特殊日期、循环历史及假调休数据来源仍待确认。
-
-## 独立前端演示
-
-[打开产品前端](https://yushumeng532.github.io/wanshili/app.html) · [实现中的需求问题汇总](docs/implementation-review.md)
-
-按工作台V0.4实现月历、三类事项、循环配置、创建与编辑、单次取消、每日确认和日期去重统计，记录保存在当前浏览器。包含可恢复的示例事项，默认不生成已发生记录。农历、假调休、系列历史处理与AI服务保留明确边界。
+公共规则验证：`node tests/event-rules.test.cjs`（60项）。
