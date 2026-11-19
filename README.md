@@ -35,3 +35,9 @@
 本地运行 `python -m http.server 8765`，打开 http://localhost:8765/ 。工作台由HTML、CSS、JavaScript和Markdown组成，批注存储与产品事项数据相互独立。
 
 下一步补齐真实输入与本地保存，再验证“每日确认—月末天数—明细修改”。特殊日期、循环历史及假调休数据来源仍待确认。
+
+## 独立前端演示
+
+[打开产品前端](https://yushumeng532.github.io/wanshili/app.html) · [实现中的需求问题汇总](docs/implementation-review.md)
+
+按工作台V0.4实现月历、三类事项、循环配置、创建与编辑、单次取消、每日确认和日期去重统计，记录保存在当前浏览器。包含可恢复的示例事项，默认不生成已发生记录。农历、假调休、系列历史处理与AI服务保留明确边界。
