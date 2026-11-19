@@ -65,6 +65,7 @@ $('repository').href=CONFIG.repository;$('history').href=CONFIG.repository+'/pul
 @media(max-width:900px){.workspace{grid-template-columns:1fr}.prototype{padding:14px}.review-stage{height:700px;flex:none}.stage-note{display:none}.review-line{display:none}.review-mobile-tip{display:block}.topbar .actions{gap:0}.topbar{padding:12px 16px}.brand h1{font-size:17px}.review-tools{gap:5px}.documentation{min-height:600px}.doc-scroll{padding:18px}.review-summary{padding:12px 18px}}
 @media print{.review-stage,.review-tools,.review-summary,.review-line,.review-caption{display:none}}
 </style>
+<link rel="stylesheet" href="assets/workbench-polish.css?v=1">
 <svg id="review-lines" class="review-line" aria-hidden="true"><path id="review-path"/><circle id="review-start" r="4"/><circle id="review-end" r="4"/></svg>
 <dialog id="note-dialog" class="note-dialog"><form id="note-form"><h2>添加原型批注</h2><p class="small">绑定一个原型元素和文档章节，生成双向定位与连线。</p><label for="note-anchor">原型位置</label><select id="note-anchor"><option value="add">添加事项按钮</option><option value="date">选中日期</option><option value="empty">当天无事项空态</option></select><label for="note-doc">关联文档</label><select id="note-doc"><option value="page-design">页面设计</option><option value="prd">业务 PRD</option><option value="dev-spec">Dev Spec</option><option value="validation">验证清单</option></select><label for="note-chapter">关联章节</label><select id="note-chapter"></select><label for="note-title">修改标题</label><input id="note-title" maxlength="60" required placeholder="例如：添加事项按钮增加图标"><label for="note-text">修改说明</label><textarea id="note-text" maxlength="2000" required placeholder="写清新增什么、放在哪里、点击后做什么"></textarea><label for="note-kind">变更类型</label><select id="note-kind"><option>新增</option><option>改动</option><option>说明</option></select><p class="small">批注保存在本机浏览器。导出批注文件后可提交到 GitHub；不会自动修改 Figma 或远端文档。</p><div class="actions"><button type="button" id="cancel-note">取消</button><button type="submit" class="primary">保存批注</button></div></form></dialog>
 <script>
@@ -79,7 +80,7 @@ let reviewNotes=BASE_NOTES.slice(),activeNote='cal-add',reviewMode=true,reviewSc
 try{const cached=JSON.parse(localStorage.getItem('wanshili-review-notes-v02')||'[]');if(Array.isArray(cached))reviewNotes.push(...cached.filter(validNote))}catch{}
 function validNote(n){return n&&typeof n.id==='string'&&["add", "date", "empty", "event-type", "event-name", "event-date", "event-repeat", "event-duration", "event-ai", "event-save", "event-item", "event-edit", "event-delete", "event-discard", "event-error", "event-scope", "event-retry"].includes(n.anchor)&&DOCS.some(x=>x[0]===n.doc)&&['chapter','title','text','kind','status'].every(k=>typeof n[k]==='string')&&(!('screen'in n)||typeof n.screen==='string')&&(!('screens'in n)||(Array.isArray(n.screens)&&n.screens.every(x=>typeof x==='string')))}
 const prototypePane=document.querySelector('.prototype'),originalStage=document.querySelector('.proto-stage');
-const reviewTools=document.createElement('div');reviewTools.className='review-tools';reviewTools.innerHTML='<button id="mode-figma" aria-pressed="false">Figma 演示</button><button id="mode-review" aria-pressed="true">标注 <span id="note-count"></span></button><label class="review-muted" for="review-zoom">缩放</label><select id="review-zoom"><option value="fit">适应</option><option value="0.5">50%</option><option value="0.75">75%</option><option value="1">100%</option></select><span class="grow"></span><button id="new-note">＋ 批注</button><button id="export-notes">导出</button><button id="import-notes">导入</button><button id="collapse-docs" aria-expanded="true">收起文档</button>';
+const reviewTools=document.createElement('div');reviewTools.className='review-tools';reviewTools.innerHTML='<button id="mode-figma" aria-pressed="false">Figma 演示</button><button id="mode-review" aria-pressed="true">标注 <span id="note-count"></span></button><span class="zoom-control"><label class="review-muted" for="review-zoom">缩放</label><select id="review-zoom"><option value="fit">适应</option><option value="0.5">50%</option><option value="0.75">75%</option><option value="1">100%</option></select></span><span class="grow"></span><button id="new-note">＋ 批注</button><button id="export-notes">导出</button><button id="import-notes">导入</button><button id="collapse-docs" aria-expanded="true">收起文档</button>';
 prototypePane.insertBefore(reviewTools,originalStage);
 const reviewStage=document.createElement('div');reviewStage.className='review-stage';reviewStage.id='review-stage';reviewStage.innerHTML='<div id="review-phone" class="review-phone"></div><div id="review-points"></div><aside id="stage-note" class="stage-note"></aside>';
 prototypePane.insertBefore(reviewStage,originalStage);
@@ -114,7 +115,7 @@ loadSharedNotes();
 
 </script>
 <script src="assets/event-flow.js?v=2"></script>
-<script src="assets/web-demo.js?v=2"></script>
+<script src="assets/web-demo.js?v=3"></script>
 </body>
 </html>
 
