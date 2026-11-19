@@ -25,7 +25,7 @@ function normalSchedulePreview(){
 }
 
 const scenes=[
- ['3:8','02-01 新建 · 空表单',()=>form().replace('相识纪念日','<span class="placeholder">请输入事项名称</span>')],
+ ['3:8','02-01 新建 · 空表单（现有演示）',()=>form().replace('相识纪念日','<span class="placeholder">请输入事项名称</span>')],
  ['review:normal','02-01 新建 · 普通日程（设计预览）',normalSchedulePreview,'down'],
  ['3:9','02-02 新建 · 正计时',()=>form()],
  ['3:10','02-03 新建 · 倒数日',()=>form('down'),'down'],

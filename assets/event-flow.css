@@ -13,7 +13,7 @@
 #review-start{display:none}
 
 /* The proposed type selector fits the same 390 × 844 review frame. */
-#review-phone[data-scene="review:normal"] .tabs {
+#review-phone.flow-screen[data-scene="review:normal"] .tabs {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   height: auto;
