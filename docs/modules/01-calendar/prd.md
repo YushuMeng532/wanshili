@@ -81,6 +81,8 @@
 
 [工作台交互与批注](https://yushumeng532.github.io/wanshili/?screen=review%3Astop-today#prd) · [Figma 结束正计时演示](https://www.figma.com/proto/8aE2Z9hUhKtxgXjnEuCY7I?node-id=208-65&page-id=2%3A2&starting-point-node-id=208%3A65&scaling=scale-down)
 
+结束后回看 11 月 20 日，事项列表显示「正计时 · 第 4 天」。月历小圆点只标记 11 月 17 日和 23 日。[回看中间日期的交互与批注](https://yushumeng532.github.io/wanshili/?screen=review%3Astop-history&note=stop-countup-history#prd)
+
 ## 5. 月末天数
 
 统计口径改为过去的计划日期自动发生，不依赖人工确认。只计真实今天之前的日期，排除今天、未来和无计划日期，排除2月29日。

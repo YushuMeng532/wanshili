@@ -323,6 +323,11 @@
       "id": "stop-countup-next", "anchor": "stop-empty", "doc": "prd", "chapter": "5. 月末天数",
       "title": "结束次日与统计", "text": "次日列表不再展示这条正计时，结束日此时计入月度统计，过去记录继续保留。",
       "kind": "新增", "status": "原型已连接", "screen": "review:stop-next-day"
+    },
+    {
+      "id": "stop-countup-history", "anchor": "stop-history-day", "doc": "prd", "chapter": "4. 详情、编辑与删除",
+      "title": "回看中间日期的累计天数", "text": "11 月 17 日开始、23 日结束后，回看 11 月 20 日显示「正计时 · 第 4 天」。月历小圆点仍只标记开始日和结束日。",
+      "kind": "新增", "status": "原型已连接", "screen": "review:stop-history"
     }
   ]
 }

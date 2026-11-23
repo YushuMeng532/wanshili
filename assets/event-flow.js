@@ -26,11 +26,12 @@ function normalSchedulePreview(){
 
 const stopFigma = {
   'review:stop-today':'208:65', 'review:stop-active':'208:216', 'review:stop-confirm':'208:263',
-  'review:stop-ended':'208:332', 'review:stop-end-day':'208:383', 'review:stop-next-day':'208:536'
+  'review:stop-ended':'208:332', 'review:stop-end-day':'208:383', 'review:stop-next-day':'208:536',
+  'review:stop-history':'214:688'
 };
 const stopId = state => 'review:stop-' + state;
 const stopButton = (label, state, className = '', anchor = '') =>
-  `<button type="button" class="${className}" data-stop-next="${stopId(state)}"${anchor ? ` data-anchor="${anchor}"` : ''}${label==='‹'?' aria-label="返回当天"':''}>${label}</button>`;
+  `<button type="button" class="${className}" data-stop-next="${stopId(state)}"${anchor ? ` data-anchor="${anchor}"` : ''}${label==='‹'?' aria-label="返回当天"':typeof label==='number'?` aria-label="11月${label}日"`:''}>${label}</button>`;
 
 function stopDetail(state) {
   const ended = state === 'ended';
@@ -57,18 +58,22 @@ function stopDetail(state) {
 function stopCalendar(state) {
   const next = state === 'next-day';
   const active = state === 'today';
-  const selected = next ? 24 : 23;
-  const heading = `11月${selected}日 周${next ? '二' : '一'}`;
+  const history = state === 'history';
+  const dateScenes = {20:'history',23:'end-day',24:'next-day'};
+  const selected = next ? 24 : history ? 20 : 23;
+  const heading = `11月${selected}日 周${'日一二三四五六'[new Date(Date.UTC(2026,10,selected)).getUTCDay()]}`;
   let dates = '<span class="calcell"></span>'.repeat(6);
   for (let day=1; day<=30; day++) {
     const mark = day===17 || (day===23&&!active);
     const css = 'calcell' + (day===selected?' selected':'') + (mark?' stop-mark':'');
-    if (!active && day===(next?23:24)) dates += stopButton(day,next?'end-day':'next-day',css,next?'':'stop-next-date');
-    else dates += `<span class="${css}"${day===23&&!active?' data-anchor="stop-end-date"':''}>${day}</span>`;
+    if (!active && day!==selected && dateScenes[day]) {
+      dates += stopButton(day,dateScenes[day],css,state==='end-day'&&day===24?'stop-next-date':'');
+    } else dates += `<span class="${css}"${day===23&&!active?' data-anchor="stop-end-date"':''}>${day}</span>`;
   }
   const weekdays = [...'一二三四五六日'].map(day=>`<span class="calcell weekday">${day}</span>`).join('');
   const calendar = `<div class="calendar stop-calendar"><div class="month"><span>‹</span><b>2026年11月</b><span>›</span><small>今天</small></div><div class="calgrid">${weekdays}${dates}</div></div>`;
-  const event = `<button type="button" class="item stop-item" data-anchor="${active?'stop-entry':'stop-result'}" data-stop-next="${stopId(active?'active':'ended')}">
+  const historyEvent = `<div class="item stop-item" data-anchor="stop-history-day"><span class="stripe"></span>${icon('book')}<b>相识纪念日</b><small>正计时 · 第 ${selected-16} 天</small></div>`;
+  const event = history ? historyEvent : `<button type="button" class="item stop-item" data-anchor="${active?'stop-entry':'stop-result'}" data-stop-next="${stopId(active?'active':'ended')}">
     <span class="stripe"></span>${icon('book')}<b>相识纪念日</b><small>${active?'正计时 · 第 7 天':'已结束 · 共 7 天'}</small><span>›</span></button>`;
   const empty = `<div class="phone-empty stop-empty" data-anchor="stop-empty">${phoneIcon}<strong>这一天还没有事项</strong><p>从一件小事开始记录</p></div>`;
   const content = `<div class="items"><h3>${heading} <small class="helper">共${next?'0':'1'}项</small></h3>${next?empty:event}</div><div class="bottomnav"><span>日历</span><span>统计</span><span>我的</span></div>`;
@@ -99,6 +104,7 @@ const scenes=[
  [stopId('ended'),'03-08 正计时 · 已结束详情',()=>stopDetail('ended')],
  [stopId('end-day'),'03-09 正计时 · 月历结束日',()=>stopCalendar('end-day')],
  [stopId('next-day'),'03-10 正计时 · 月历次日',()=>stopCalendar('next-day')],
+ [stopId('history'),'03-11 正计时 · 回看中间日期',()=>stopCalendar('history')],
  ['137:3616','03 补充 · 未保存退出',()=>form('up',{edit:true})+'<div class="overlay"><div class="dialog"><h3>放弃本次修改？</h3><p>修改内容尚未保存。</p><div class="btn">继续编辑</div><div class="plain">放弃修改</div></div></div>'],
  ['137:4025','03 补充 · 保存中',()=>form('up',{edit:true,saving:true})],
  ['137:3376','03 补充 · 保存成功',()=>home()],
@@ -130,7 +136,7 @@ const oldReviewMode=setReviewMode;
 setReviewMode=function(value){oldReviewMode(value);if(!value&&$('prototype').dataset.source)$('prototype').src=$('prototype').dataset.source;updateAuditPanel()};
 
 const anchorLabels={
- 'stop-entry':'正在进行的正计时','stop-action':'结束正计时按钮','stop-confirm':'确认结束','stop-total':'最终天数','stop-end-date':'结束日期标记','stop-next-date':'切换到次日','stop-result':'结束日事项','stop-empty':'结束次日空态',
+ 'stop-entry':'正在进行的正计时','stop-action':'结束正计时按钮','stop-confirm':'确认结束','stop-total':'最终天数','stop-end-date':'结束日期标记','stop-next-date':'切换到次日','stop-result':'结束日事项','stop-empty':'结束次日空态','stop-history-day':'历史日期对应的累计天数',
  'normal-schedule':'普通日程',
  'event-type':'事项类型切换','event-name':'名称输入','event-date':'日期与历法','event-repeat':'循环方式','event-duration':'结束条件','event-ai':'AI分析范围','event-save':'保存状态','event-item':'事项列表行','event-edit':'编辑入口','event-delete':'删除确认','event-discard':'未保存退出','event-error':'名称校验','event-scope':'修改范围','event-retry':'失败重试'
 };

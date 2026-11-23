@@ -80,7 +80,7 @@
 .flow-screen .stop-calendar .selected:not(.weekday) { background: #54758a; color: #fff; }
 .flow-screen .stop-calendar .stop-mark::after { content: ''; position: absolute; width: 5px; height: 5px; bottom: 3px; left: calc(50% - 2.5px); border-radius: 50%; background: var(--stop-ink); }
 .flow-screen .stop-calendar .stop-mark.selected::after { background: var(--stop-fill); }
-.flow-screen button.stop-item { width: 100%; display: flex; gap: 10px; text-align: left; background: transparent; border-bottom: 1px solid #dfe7eb; }
-.flow-screen button.stop-item svg { color: var(--stop-ink); }
-.flow-screen button.stop-item small { margin-left: auto; color: var(--stop-ink); }
+.flow-screen .stop-item { width: 100%; display: flex; gap: 10px; text-align: left; background: transparent; border-bottom: 1px solid #dfe7eb; }
+.flow-screen .stop-item svg { color: var(--stop-ink); }
+.flow-screen .stop-item small { margin-left: auto; color: var(--stop-ink); }
 .flow-screen .stop-empty { margin-top: 35px; }
