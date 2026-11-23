@@ -41,7 +41,7 @@ function picker(overlay){const title=overlay.querySelector('.sheet-title')?.text
  if(title.includes('循环方式'))overlay.querySelectorAll('.row').forEach(x=>x.querySelector('.radio')?.classList.toggle('checked',x.textContent.trim()===draft.repeat));
  if(title.includes('持续次数')){const b=overlay.querySelector('.subfield b');if(b){b.innerHTML='<input class="demo-input" type="number" min="1" max="3650" aria-label="持续次数" value="'+(parseInt(draft.duration)||30)+'">';b.querySelector('input').oninput=e=>{if(e.target.validity.valid){draft.duration=e.target.value+' 次';dirty=true}}}}
 }
-function enhance(){const id=$('screen').value;phone.dataset.mode=playing?'demo':'annotation';if(!playing||id==='review:normal')return;
+function enhance(){const id=$('screen').value;phone.dataset.mode=playing?'demo':'annotation';if(!playing||id==='review:normal'||id.startsWith('review:stop-'))return;
  renderFields(id);if(homeIds.includes(id)){renderRecords(id);renderCalendar()}
  if(id==='3:15'){const r=(records[recordIndex]&&R.shown(records[recordIndex],selectedISO()))||draft;setText(phone.querySelector('.hero h3'),r.name||'阅读');setText(phone.querySelector('.hero .pill'),typeText(r.type));setText(phone.querySelector('.hero .helper'),'从 '+dateText(r.date)+'开始');setText(field('开始日期'),dateText(r.date));setText(field('循环'),r.repeat);setText(field('正计时'),R.label(asEvent(r),selectedISO()));setText(field('结束条件'),r.duration);setText(field('AI开关'),r.ai?'开启（服务未接入）':'关闭（服务未接入）');setText(field('备注'),r.remark||'未填写')}
  if(phone.querySelector('.overlay'))picker(phone.querySelector('.overlay'));
@@ -51,7 +51,7 @@ function enhance(){const id=$('screen').value;phone.dataset.mode=playing?'demo':
  phone.querySelectorAll('.annotation-target').forEach(x=>x.classList.remove('annotation-target'));
  if(id==='137:4025')saveTimer=setTimeout(commit,450);
 }
-const oldRender=renderPhone;renderPhone=function(){oldRender();const overlay=phone.querySelector('.overlay');if(playing&&overlay&&layerBase)phone.innerHTML=layerBase+overlay.outerHTML;enhance();fitPhone()};
+const oldRender=renderPhone;renderPhone=function(){oldRender();const overlay=phone.querySelector('.overlay');if(playing&&overlay&&layerBase&&!$('screen').value.startsWith('review:stop-'))phone.innerHTML=layerBase+overlay.outerHTML;enhance();fitPhone()};
 fitPhone=function(){if(!reviewMode)return;const box={width:stage.clientWidth,height:stage.clientHeight},notes=!playing&&box.width>620,reserve=notes?210:32;
  const auto=Math.min((box.width-reserve)/390,(box.height-36)/844,1),scale=reviewScale==='fit'?Math.max(.1,auto):Number(reviewScale);
  const width=390*scale,height=844*scale,left=notes?Math.max(200,(box.width-width+180)/2):Math.max(16,(box.width-width)/2);
@@ -64,7 +64,7 @@ function save(){if(R.leapDay(draft.date)){toast('2月29日不生成事项，请�
 function cancel(){if(dirty||JSON.stringify(draft)!==baseline){returnScene=$('screen').value;go('137:3616')}else go(editing?'3:15':'3:4')}
 function finishSheet(commit=true){if(!commit&&sheetDraft){draft=JSON.parse(JSON.stringify(sheetDraft));sheetDraft=null;dirty=JSON.stringify(draft)!==baseline;go(returnScene);return}const id=$('screen').value;if(id==='137:3182'&&!draft.days.length){toast('请至少选择一个星期');return}dirty=true;go(returnScene)}
 const annotationClick=phone.onclick;
-phone.onclick=e=>{if(!playing){annotationClick(e);return}const target=e.target;if(target.closest('input'))return;
+phone.onclick=e=>{if(!playing||$('screen').value.startsWith('review:stop-')){annotationClick(e);return}const target=e.target;if(target.closest('input'))return;
  const id=$('screen').value,overlay=target.closest('.overlay'),text=target.textContent.trim();
  if(overlay){
   if(target===overlay){if(id==='review:conflict'){go('3:15');return}if(id==='3:18')go('3:15');else if(id==='3:17')go('3:16');else finishSheet(false);return}

@@ -44,3 +44,43 @@
   color: #54758a;
   font-size: 12px;
 }
+
+.flow-screen[data-scene^="review:stop-"] {
+  --stop-fill: #c9d1ac;
+  --stop-ink: #66724d;
+  --stop-tint: #ebefe2;
+  background: #f5f7f8;
+}
+.flow-screen[data-scene^="review:stop-"] button {
+  font: inherit;
+  color: inherit;
+  border: 0;
+  cursor: pointer;
+}
+.flow-screen[data-scene^="review:stop-"] .nav .back { background: transparent; font-size: 25px; padding: 0; }
+.flow-screen .stop-hero { margin: 13px 24px 0; text-align: center; height: 225px; border-bottom: 1px solid #dfe7eb; }
+.flow-screen .stop-hero svg { width: 54px; height: 54px; margin: 6px 0 9px; color: var(--stop-ink); }
+.flow-screen .stop-hero h3 { margin: 0 0 11px; font-size: 24px; }
+.flow-screen .stop-pill { display: inline-block; padding: 5px 14px; border-radius: 999px; color: var(--stop-ink); background: var(--stop-tint); }
+.flow-screen .stop-total { margin-top: 12px; font-size: 19px; }
+.flow-screen .stop-total strong { color: var(--stop-ink); font-size: 35px; margin: 0 3px; }
+.flow-screen .stop-details .row, .flow-screen .stop-sheet .row { min-height: 51px; }
+.flow-screen .stop-actions { bottom: 34px; display: grid; justify-items: stretch; gap: 4px; }
+.flow-screen .btn.stop-primary { background: var(--stop-fill); border: 0; color: #263842; }
+.flow-screen .stop-secondary { min-height: 42px; padding: 0 10px; background: transparent; color: var(--stop-ink)!important; font-weight: 600!important; }
+.flow-screen .stop-delete { display: block; color: #a4586e; text-align: center; padding: 9px 0; }
+.flow-screen .stop-overlay { z-index: 5; }
+.flow-screen .stop-dismiss { position: absolute; inset: 0; width: 100%; background: transparent; }
+.flow-screen .stop-sheet { bottom: 0; min-height: 318px; padding-bottom: 42px; }
+.flow-screen .stop-sheet .helper { margin: 14px 0 24px; }
+.flow-screen .stop-sheet .btn { flex: 1; border-radius: 12px; }
+.flow-screen .stop-sheet .stop-cancel { background: #eef2f3; color: #263842; }
+.flow-screen .stop-calendar .calcell { position: relative; }
+.flow-screen .stop-calendar button.calcell { background: transparent; padding: 0; }
+.flow-screen .stop-calendar .selected:not(.weekday) { background: #54758a; color: #fff; }
+.flow-screen .stop-calendar .stop-mark::after { content: ''; position: absolute; width: 5px; height: 5px; bottom: 3px; left: calc(50% - 2.5px); border-radius: 50%; background: var(--stop-ink); }
+.flow-screen .stop-calendar .stop-mark.selected::after { background: var(--stop-fill); }
+.flow-screen button.stop-item { width: 100%; display: flex; gap: 10px; text-align: left; background: transparent; border-bottom: 1px solid #dfe7eb; }
+.flow-screen button.stop-item svg { color: var(--stop-ink); }
+.flow-screen button.stop-item small { margin-left: auto; color: var(--stop-ink); }
+.flow-screen .stop-empty { margin-top: 35px; }

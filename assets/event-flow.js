@@ -24,6 +24,57 @@ function normalSchedulePreview(){
  return base('新建事项',body,'保存')+'<p class="normal-preview-caption">设计预览 · 待实现</p>';
 }
 
+const stopFigma = {
+  'review:stop-today':'208:65', 'review:stop-active':'208:216', 'review:stop-confirm':'208:263',
+  'review:stop-ended':'208:332', 'review:stop-end-day':'208:383', 'review:stop-next-day':'208:536'
+};
+const stopId = state => 'review:stop-' + state;
+const stopButton = (label, state, className = '', anchor = '') =>
+  `<button type="button" class="${className}" data-stop-next="${stopId(state)}"${anchor ? ` data-anchor="${anchor}"` : ''}${label==='‹'?' aria-label="返回当天"':''}>${label}</button>`;
+
+function stopDetail(state) {
+  const ended = state === 'ended';
+  const back = stopButton('‹', ended ? 'end-day' : 'today', 'back');
+  const hero = `<div class="stop-hero">${icon('book')}<h3>相识纪念日</h3>
+    <span class="stop-pill">正计时 · ${ended ? '已结束' : '进行中'}</span>
+    <div class="stop-total"${ended ? ' data-anchor="stop-total"' : ''}>${ended ? '共' : '第'} <strong>7</strong> 天</div></div>`;
+  const details = `<div class="content stop-details">${row('开始日期','2026年11月17日','cal',false)}
+    ${ended ? row('结束日期','2026年11月23日','cal',false) : ''}
+    ${row('AI 习惯分析','关闭','spark',false)}${row('备注','选填','note',false)}</div>`;
+  const footer = `<div class="foot stop-actions"><div class="btn stop-primary">编辑事项</div>
+    ${ended ? '' : stopButton('结束正计时','confirm','stop-secondary','stop-action')}
+    <span class="stop-delete">删除事项</span></div>`;
+  const confirmation = state === 'confirm' ? `<div class="overlay stop-overlay">
+    <button type="button" class="stop-dismiss" data-stop-next="${stopId('active')}" aria-label="关闭确认"></button>
+    <div class="sheet stop-sheet" role="dialog" aria-label="结束正计时？"><div class="handle"></div><div class="sheet-title">结束正计时？</div>
+    ${row('结束日期','2026年11月23日','cal',false)}${row('累计天数','7 天','flag',false)}
+    <p class="helper">结束当天计入天数，历史记录会保留。</p>
+    <div class="split">${stopButton('取消','active','btn stop-cancel')}${stopButton('确认结束','ended','btn stop-primary','stop-confirm')}</div>
+    <div class="homebar"></div></div></div>` : '';
+  return base('事项详情',hero+details+footer,'','up','').replace('<span class="back">‹</span>',back) + confirmation;
+}
+
+function stopCalendar(state) {
+  const next = state === 'next-day';
+  const active = state === 'today';
+  const selected = next ? 24 : 23;
+  const heading = `11月${selected}日 周${next ? '二' : '一'}`;
+  let dates = '<span class="calcell"></span>'.repeat(6);
+  for (let day=1; day<=30; day++) {
+    const mark = day===17 || (day===23&&!active);
+    const css = 'calcell' + (day===selected?' selected':'') + (mark?' stop-mark':'');
+    if (!active && day===(next?23:24)) dates += stopButton(day,next?'end-day':'next-day',css,next?'':'stop-next-date');
+    else dates += `<span class="${css}"${day===23&&!active?' data-anchor="stop-end-date"':''}>${day}</span>`;
+  }
+  const weekdays = [...'一二三四五六日'].map(day=>`<span class="calcell weekday">${day}</span>`).join('');
+  const calendar = `<div class="calendar stop-calendar"><div class="month"><span>‹</span><b>2026年11月</b><span>›</span><small>今天</small></div><div class="calgrid">${weekdays}${dates}</div></div>`;
+  const event = `<button type="button" class="item stop-item" data-anchor="${active?'stop-entry':'stop-result'}" data-stop-next="${stopId(active?'active':'ended')}">
+    <span class="stripe"></span>${icon('book')}<b>相识纪念日</b><small>${active?'正计时 · 第 7 天':'已结束 · 共 7 天'}</small><span>›</span></button>`;
+  const empty = `<div class="phone-empty stop-empty" data-anchor="stop-empty">${phoneIcon}<strong>这一天还没有事项</strong><p>从一件小事开始记录</p></div>`;
+  const content = `<div class="items"><h3>${heading} <small class="helper">共${next?'0':'1'}项</small></h3>${next?empty:event}</div><div class="bottomnav"><span>日历</span><span>统计</span><span>我的</span></div>`;
+  return base('万事历',calendar+content,'','up','').replace('<span class="back">‹</span>','');
+}
+
 const scenes=[
  ['3:8','02-01 新建 · 空表单（现有演示）',()=>form().replace('相识纪念日','<span class="placeholder">请输入事项名称</span>')],
  ['review:normal','02-01 新建 · 普通日程（设计预览）',normalSchedulePreview,'down'],
@@ -42,6 +93,12 @@ const scenes=[
  ['3:16','03-02 编辑事项',()=>form('up',{edit:true})],
  ['3:17','03-03 修改循环范围',()=>form('up',{edit:true})+sheet('将修改应用于',radioRow('仅这一次',true)+radioRow('这次及之后',false)+radioRow('整个系列',false)+'<p class="helper">确认后覆盖对应未过去数据，过去日程保留。</p><div class="btn">确认保存</div>')],
  ['3:18','03-04 删除确认',()=>detail()+sheet('删除这条事项？','<p class="helper">相识纪念日 · 纪念日 · 按自然日累计</p>'+radioRow('仅这一次',true)+radioRow('这次及之后',false)+radioRow('整个系列',false)+'<p class="helper">取消对应未过去计划，过去日程保留可查看。</p><div class="split"><div class="btn outline">取消</div><div class="btn danger">确认删除</div></div>')],
+ [stopId('today'),'03-05 正计时 · 今天入口',()=>stopCalendar('today')],
+ [stopId('active'),'03-06 正计时 · 进行中详情',()=>stopDetail('active')],
+ [stopId('confirm'),'03-07 正计时 · 结束确认',()=>stopDetail('confirm')],
+ [stopId('ended'),'03-08 正计时 · 已结束详情',()=>stopDetail('ended')],
+ [stopId('end-day'),'03-09 正计时 · 月历结束日',()=>stopCalendar('end-day')],
+ [stopId('next-day'),'03-10 正计时 · 月历次日',()=>stopCalendar('next-day')],
  ['137:3616','03 补充 · 未保存退出',()=>form('up',{edit:true})+'<div class="overlay"><div class="dialog"><h3>放弃本次修改？</h3><p>修改内容尚未保存。</p><div class="btn">继续编辑</div><div class="plain">放弃修改</div></div></div>'],
  ['137:4025','03 补充 · 保存中',()=>form('up',{edit:true,saving:true})],
  ['137:3376','03 补充 · 保存成功',()=>home()],
@@ -61,7 +118,7 @@ setPrototype=function(node){
  $('open-prototype').hidden=preview;
  $('mode-figma').disabled=preview;
  if(preview)return;
- const real=({'review:fail':'3:4','review:count':'171:530','review:conflict':'171:744'})[node]||node;
+ const real=stopFigma[node]||({'review:fail':'3:4','review:count':'171:530','review:conflict':'171:744'})[node]||node;
  const url=new URL('https://www.figma.com/proto/'+CONFIG.figmaKey);
  url.search=new URLSearchParams({'node-id':real,'page-id':'2:2','starting-point-node-id':real,scaling:'scale-down','content-scaling':'fixed','show-proto-sidebar':node==='review:fail'?'1':'0'});
  $('open-prototype').href=url.href;$('fallback-prototype').href=url.href;
@@ -73,6 +130,7 @@ const oldReviewMode=setReviewMode;
 setReviewMode=function(value){oldReviewMode(value);if(!value&&$('prototype').dataset.source)$('prototype').src=$('prototype').dataset.source;updateAuditPanel()};
 
 const anchorLabels={
+ 'stop-entry':'正在进行的正计时','stop-action':'结束正计时按钮','stop-confirm':'确认结束','stop-total':'最终天数','stop-end-date':'结束日期标记','stop-next-date':'切换到次日','stop-result':'结束日事项','stop-empty':'结束次日空态',
  'normal-schedule':'普通日程',
  'event-type':'事项类型切换','event-name':'名称输入','event-date':'日期与历法','event-repeat':'循环方式','event-duration':'结束条件','event-ai':'AI分析范围','event-save':'保存状态','event-item':'事项列表行','event-edit':'编辑入口','event-delete':'删除确认','event-discard':'未保存退出','event-error':'名称校验','event-scope':'修改范围','event-retry':'失败重试'
 };
@@ -82,6 +140,10 @@ for(const n of reviewNotes){if(n.doc==='page-design'&&['3. 月历交互','5. 空
 
 function mark(el,anchor){if(!el)return;el.dataset.anchor=anchor;el.setAttribute('role','button');el.tabIndex=0;el.setAttribute('aria-label',anchorLabels[anchor]||anchor)}
 function annotateScene(phone,id){
+ if(id.startsWith('review:stop-')){
+  if(id===stopId('confirm'))phone.querySelector('.stop-secondary')?.removeAttribute('data-anchor');
+  return;
+ }
  if(id==='review:normal'){mark(phone.querySelector('[data-normal-button]'),'normal-schedule');return}
  const overlay=phone.querySelector('.overlay');
  if(overlay){
@@ -110,7 +172,7 @@ renderPhone=function(){
  fitPhone();renderStageNote();updateAuditPanel();requestAnimationFrame(drawReview);
 };
 const previousClick=$('review-phone').onclick;
-$('review-phone').onclick=e=>{if(!sceneMap.has($('screen').value)){previousClick(e);return}const el=e.target.closest('[data-anchor]');if(!el)return;const n=visibleNotes().find(n=>n.anchor===el.dataset.anchor);if(n)selectNote(n.id);else toast('此位置可通过“＋批注”补充说明')};
+$('review-phone').onclick=e=>{const next=e.target.closest('[data-stop-next]')?.dataset.stopNext;if(next){$('screen').value=next;$('screen').onchange({target:$('screen')});return}if(!sceneMap.has($('screen').value)){previousClick(e);return}const el=e.target.closest('[data-anchor]');if(!el)return;const n=visibleNotes().find(n=>n.anchor===el.dataset.anchor);if(n)selectNote(n.id);else toast('此位置可通过“＋批注”补充说明')};
 $('review-phone').addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.matches('[data-anchor][role=button]')){e.preventDefault();e.target.click()}});
 
 function auditPage(){

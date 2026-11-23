@@ -10,7 +10,7 @@
 @media(min-width:1600px){.doc-scroll{padding-left:56px;padding-right:56px}}@media(max-width:900px){.topbar{padding:15px 18px;align-items:flex-start;flex-direction:column}.workspace{height:auto;min-height:0;grid-template-columns:1fr}.prototype{border-right:0;border-bottom:1px solid var(--line);padding:18px}.proto-stage{height:650px;flex:none;max-height:80dvh}.documentation{min-height:650px}.doc-scroll{overflow:visible;padding:20px}.tabs{padding-left:12px}.doc-toolbar{padding:12px 20px}.chapter-top{align-items:flex-start}.chapter-top h3{margin-top:8px}}@media(prefers-reduced-motion:no-preference){button,a{transition:background-color .16s ease,color .16s ease}}@media print{.topbar,.prototype,.tabs,.doc-toolbar,.copy,.intro{display:none}.workspace{display:block;height:auto}.documentation,.doc-scroll{display:block;overflow:visible;padding:0}.chapter{break-inside:auto}body{background:white}}
 @media(min-width:901px){body{height:100dvh;display:flex;flex-direction:column}.topbar{flex-shrink:0}.workspace{flex:1;height:auto}}
 </style>
-<link rel="stylesheet" href="assets/event-flow.css?v=6">
+<link rel="stylesheet" href="assets/event-flow.css?v=7">
 <link rel="stylesheet" href="assets/web-demo.css?v=5">
 </head>
 <body>
@@ -78,7 +78,7 @@ const BASE_NOTES=[
 const sharedNoteIds=new Set();
 let reviewNotes=BASE_NOTES.slice(),activeNote='cal-add',reviewMode=true,reviewScale='fit',reviewEditing=false,reviewInitialized=false;
 try{const cached=JSON.parse(localStorage.getItem('wanshili-review-notes-v02')||'[]');if(Array.isArray(cached))reviewNotes.push(...cached.filter(validNote))}catch{}
-function validNote(n){return n&&typeof n.id==='string'&&["add", "date", "empty", "event-type", "normal-schedule", "event-name", "event-date", "event-repeat", "event-duration", "event-ai", "event-save", "event-item", "event-edit", "event-delete", "event-discard", "event-error", "event-scope", "event-retry"].includes(n.anchor)&&DOCS.some(x=>x[0]===n.doc)&&['chapter','title','text','kind','status'].every(k=>typeof n[k]==='string')&&(!('screen'in n)||typeof n.screen==='string')&&(!('screens'in n)||(Array.isArray(n.screens)&&n.screens.every(x=>typeof x==='string')))}
+function validNote(n){return n&&typeof n.id==='string'&&["add", "date", "empty", "event-type", "normal-schedule", "event-name", "event-date", "event-repeat", "event-duration", "event-ai", "event-save", "event-item", "event-edit", "event-delete", "event-discard", "event-error", "event-scope", "event-retry", "stop-entry", "stop-action", "stop-confirm", "stop-total", "stop-end-date", "stop-next-date", "stop-result", "stop-empty"].includes(n.anchor)&&DOCS.some(x=>x[0]===n.doc)&&['chapter','title','text','kind','status'].every(k=>typeof n[k]==='string')&&(!('screen'in n)||typeof n.screen==='string')&&(!('screens'in n)||(Array.isArray(n.screens)&&n.screens.every(x=>typeof x==='string')))}
 const prototypePane=document.querySelector('.prototype'),originalStage=document.querySelector('.proto-stage');
 const reviewTools=document.createElement('div');reviewTools.className='review-tools';reviewTools.innerHTML='<button id="mode-figma" aria-pressed="false">Figma 演示</button><button id="mode-review" aria-pressed="true">标注 <span id="note-count"></span></button><span class="zoom-control"><label class="review-muted" for="review-zoom">缩放</label><select id="review-zoom"><option value="fit">适应</option><option value="0.5">50%</option><option value="0.75">75%</option><option value="1">100%</option></select></span><span class="grow"></span><button id="new-note">＋ 批注</button><button id="export-notes">导出</button><button id="import-notes">导入</button><button id="collapse-docs" aria-expanded="true">收起文档</button>';
 prototypePane.insertBefore(reviewTools,originalStage);
@@ -115,8 +115,8 @@ loadSharedNotes();
 
 </script>
 <script src="assets/event-rules.js?v=5"></script>
-<script src="assets/event-flow.js?v=6"></script>
-<script src="assets/web-demo.js?v=6"></script>
+<script src="assets/event-flow.js?v=7"></script>
+<script src="assets/web-demo.js?v=7"></script>
 </body>
 </html>
 

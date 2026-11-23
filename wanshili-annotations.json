@@ -283,6 +283,46 @@
       "kind": "新增",
       "status": "设计预览 · 待实现",
       "screen": "review:normal"
+    },
+    {
+      "id": "stop-countup-entry", "anchor": "stop-entry", "doc": "prd", "chapter": "4. 详情、编辑与删除",
+      "title": "打开今天正在进行的正计时", "text": "从今天的事项列表打开进行中的正计时，详情页提供「结束正计时」。",
+      "kind": "新增", "status": "原型已连接", "screen": "review:stop-today"
+    },
+    {
+      "id": "stop-countup-action", "anchor": "stop-action", "doc": "prd", "chapter": "4. 详情、编辑与删除",
+      "title": "结束正计时入口", "text": "结束是独立操作，打开确认层后再决定是否结束，无需选择编辑或删除范围。",
+      "kind": "新增", "status": "原型已连接", "screen": "review:stop-active"
+    },
+    {
+      "id": "stop-countup-confirm", "anchor": "stop-confirm", "doc": "prd", "chapter": "4. 详情、编辑与删除",
+      "title": "确认结束并保留历史", "text": "确认后将今天记为结束日，结束当天计入天数。取消或关闭会继续计时。",
+      "kind": "新增", "status": "原型已连接", "screen": "review:stop-confirm"
+    },
+    {
+      "id": "stop-countup-total", "anchor": "stop-total", "doc": "prd", "chapter": "4. 详情、编辑与删除",
+      "title": "展示最终累计天数", "text": "11 月 17 日开始、11 月 23 日结束，含起止日共 7 天。详情保留起止日期。",
+      "kind": "新增", "status": "原型已连接", "screen": "review:stop-ended"
+    },
+    {
+      "id": "stop-countup-marker", "anchor": "stop-end-date", "doc": "prd", "chapter": "2. 月历与当天事项",
+      "title": "月历标记结束日期", "text": "结束后月历标记开始日和结束日。起止为同一天时只标一次。",
+      "kind": "新增", "status": "原型已连接", "screen": "review:stop-end-day"
+    },
+    {
+      "id": "stop-countup-result", "anchor": "stop-result", "doc": "prd", "chapter": "2. 月历与当天事项",
+      "title": "结束当天的事项记录", "text": "选中结束日，下方仍可查看该事项，状态显示为「已结束 · 共 7 天」。",
+      "kind": "新增", "status": "原型已连接", "screen": "review:stop-end-day"
+    },
+    {
+      "id": "stop-countup-next-date", "anchor": "stop-next-date", "doc": "prd", "chapter": "2. 月历与当天事项",
+      "title": "从结束日切换到次日", "text": "结束日之后不再累计，也不在次日事项列表中显示。",
+      "kind": "新增", "status": "原型已连接", "screen": "review:stop-end-day"
+    },
+    {
+      "id": "stop-countup-next", "anchor": "stop-empty", "doc": "prd", "chapter": "5. 月末天数",
+      "title": "结束次日与统计", "text": "次日列表不再展示这条正计时，结束日此时计入月度统计，过去记录继续保留。",
+      "kind": "新增", "status": "原型已连接", "screen": "review:stop-next-day"
     }
   ]
 }
