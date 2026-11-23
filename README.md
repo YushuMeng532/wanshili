@@ -2,7 +2,9 @@
 
 把纪念日、倒数日和生日放进一张日历，查看选中日期的时间进度，并回顾过去日程。
 
-[产品前端](https://yushumeng532.github.io/wanshili/app.html) · [需求与原型工作台](https://yushumeng532.github.io/wanshili/) · [Figma设计](https://www.figma.com/design/8aE2Z9hUhKtxgXjnEuCY7I?node-id=2-2)
+[手机试用](https://yushumeng532.github.io/wanshili/app.html) · [需求与原型工作台](https://yushumeng532.github.io/wanshili/) · [Figma设计](https://www.figma.com/design/8aE2Z9hUhKtxgXjnEuCY7I?node-id=2-2)
+
+手机浏览器直接打开试用。选定日期后可新建事项，也可打开今天的「相识纪念日」示例，试用结束正计时和回看历史。数据保存在当前浏览器。
 
 ## 当前版本 V0.5
 

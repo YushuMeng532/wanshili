@@ -11,4 +11,27 @@ const moved=make({recurrence:{frequency:'once'},date:'2026-11-21'});R.rewrite(mo
 const past=make();assert.throws(()=>R.rewrite(past,null,'one','2026-11-18','2026-11-19'));n++;R.rewrite(past,null,'series','2026-11-18','2026-11-19');check(R.occurrence(past,'2026-11-18')&&!R.occurrence(past,'2026-11-19'),'过去选日整系列边界为今天');
 const sum=R.summary([up,make({id:'other',type:'up'})],['2026-11-17','2026-11-18','2026-11-19','2026-11-20'],'2026-11-19');check(sum.total.length===2&&sum.byType.up.length===2,'按过去日期并集');check(!R.occurrence(make({calendarType:'lunar'}),'2026-11-19'),'农历未接入');check(!R.occurrence(make({recurrence:{frequency:'workdays'}}),'2026-11-19'),'调休不代算');
 const before=make({date:'2026-11-21',recurrence:{frequency:'once'}});R.rewrite(before,{...before,title:'改标题'},'one','2026-11-19','2026-11-19');check(!R.occurrence(before,'2026-11-19'),'提前查看并单次改标题不伪造归零实例');const skip=make();R.rewrite(skip,null,'one','2026-11-21','2026-11-19');check(R.label(R.at(skip,'2026-11-20'),'2026-11-20',skip)==='就是今天','当日未取消则归零');check(R.label(R.config(skip),'2026-11-21',skip)==='还有1天','取消实例之后寻找下一计划');
+const stopped=R.normalize(make({id:'stopped',type:'up'}));
+R.rewrite(stopped,{...stopped,title:'现名称'},'series','2026-11-23','2026-11-23');
+check(!R.canEndCountup(stopped,'2026-11-20','2026-11-23'),'只有选中今天可以结束');
+check(R.canEndCountup(stopped,'2026-11-23','2026-11-23'),'进行中可以结束');
+R.endCountup(stopped,'2026-11-23');
+const reloaded=JSON.parse(JSON.stringify(stopped));
+check(R.marked(reloaded,'2026-11-17')&&R.marked(reloaded,'2026-11-23'),'持久化后正计时首尾标记');
+check(!R.marked(reloaded,'2026-11-20'),'中间日期不标记');
+check(R.label(R.shown(reloaded,'2026-11-20'),'2026-11-20')==='第4天','中间日期保留当日天数');
+check(R.label(R.shown(reloaded,'2026-11-23'),'2026-11-23')==='已结束 · 共 7 天','结束当天计入最终天数');
+check(!R.shown(reloaded,'2026-11-24')&&!R.occurrence(reloaded,'2026-11-24'),'结束后不展示或生成实例');
+assert.throws(()=>R.endCountup(reloaded,'2026-11-24'));
+n++;
+const sameDay=R.normalize(make({id:'same',type:'up',date:'2026-11-23'}));
+R.endCountup(sameDay,'2026-11-23');
+check(R.label(R.marked(sameDay,'2026-11-23'),'2026-11-23')==='已结束 · 共 1 天','同一天开始并结束为1天');
+check(R.summary([sameDay],['2026-11-23'],'2026-11-23').total.length===0,'结束当天暂不计入统计');
+check(R.summary([sameDay],['2026-11-23'],'2026-11-24').byType.up.length===1,'结束日进入次日后计入统计');
+
+const normal=R.normalize(make({id:'normal',type:'normal',date:'2026-11-23',recurrence:{frequency:'weekly',weekdays:[1]},endCondition:2}));
+check(R.shown(normal,'2026-11-23')&&R.marked(normal,'2026-11-30'),'普通日程在两次计划日出现');
+check(!R.shown(normal,'2026-11-24')&&!R.marked(normal,'2026-12-07'),'非计划日和次数用完后均不显示');
+check(R.summary([normal],['2026-11-23','2026-11-30'],'2026-11-30').byType.normal.join()==='2026-11-23','普通日程统计仅计算过去');
 console.log(JSON.stringify({passed:true,checks:n}));
