@@ -59,7 +59,9 @@ test('invalid dates or incomplete recurrence prompt for clarification', async ()
 test('habit prompt only receives aggregate figures', async () => {
   const snapshot = { start: '2026-11-01', end: '2026-11-23', total: 7, counts: { normal: 6, birthday: 1, down: 1, up: 0 } };
   const response = await handleRequest(request('/api/habit', { ...snapshot, titles: ['private'] }), env, async (_url, options) => {
-    assert.deepEqual(JSON.parse(JSON.parse(options.body).messages[1].content), snapshot);
+    assert.deepEqual(JSON.parse(JSON.parse(options.body).messages[1].content), {
+      ...snapshot, counts: { 普通日程: 6, 正计时: 0, 倒数日: 1, 生日: 1 }
+    });
     return answer({ summary: '本月有 7 天安排了已授权的日程。' });
   });
   assert.equal((await response.json()).summary, '本月有 7 天安排了已授权的日程。');

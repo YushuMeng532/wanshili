@@ -73,8 +73,9 @@
         return data;
       } catch (error) {
         if (panel.isConnected && dialog.open && pending === controller) {
-          status.textContent = error.name === 'AbortError' ? '本次处理超时，可重试。' :
-            '处理中断。' + (errorMessage[error.message] || error.message || '请稍后重试。');
+          if (error.name === 'AbortError') status.textContent = '本次处理超时，可重试。';
+          else if (error.name === 'TypeError') status.textContent = '当前网络连接不到 AI 服务，可稍后重试。';
+          else status.textContent = error.name === 'SyntaxError' ? 'AI 服务暂不可用，请稍后重试。' : error.message;
         }
       } finally {
         clearTimeout(timer);

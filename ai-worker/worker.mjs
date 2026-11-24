@@ -2,6 +2,7 @@ const endpoint = 'https://api.deepseek.com/chat/completions';
 const maximumBody = 4096;
 const actions = ['create', 'find', 'move', 'cancel', 'end', 'clarify'];
 const types = ['normal', 'up', 'down', 'birthday'];
+const typeLabels = { normal: '普通日程', up: '正计时', down: '倒数日', birthday: '生日' };
 const repeats = ['once', 'daily', 'weekly', 'monthly', 'yearly', 'weekends'];
 const isoDay = value => typeof value === 'string' && /^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(value) &&
   value >= '0001-01-01' && Number.isFinite(Date.parse(value + 'T00:00:00Z')) &&
@@ -23,7 +24,7 @@ date 为新建日期或用来定位已有事项的原日期，targetDate 为改�
 
 const habitPrompt = `根据万事历给出的日期范围和分类天数，写一段 120 个中文字以内的回顾。
 输出 JSON，例如 {"summary":"本月的日程安排中，普通日程覆盖的天数最多。"}。
-数字必须来自输入。同一天可属于多个类别，不累加各类别。只描述计划安排，不能推断真实完成情况、健康状况或个人特征。`;
+数字必须来自输入。分类名称沿用输入中的普通日程、正计时、倒数日和生日。同一天可属于多个类别，不累加各类别。只描述计划安排，不能推断真实完成情况、健康状况或个人特征。`;
 
 async function readInput(request) {
   if (!request.headers.get('Content-Type')?.toLowerCase().startsWith('application/json') || !request.body) return null;
@@ -54,7 +55,7 @@ function inputFor(path, value) {
   if (!isoDay(start) || !isoDay(end) || start > end || start.slice(0, 7) !== end.slice(0, 7)) return null;
   if (!Number.isInteger(total) || total < 1 || total > 31 || !counts) return null;
   if (!types.every(type => Number.isInteger(counts[type]) && counts[type] >= 0 && counts[type] <= total)) return null;
-  return { start, end, total, counts: Object.fromEntries(types.map(type => [type, counts[type]])) };
+  return { start, end, total, counts: Object.fromEntries(types.map(type => [typeLabels[type], counts[type]])) };
 }
 
 function reviewPlan(result) {
