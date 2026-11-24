@@ -1,6 +1,6 @@
 (()=>{'use strict';
 const R=window.WanshiliRules;
-const $=id=>document.getElementById(id),KEY='wanshili-product-demo-v1',DAY=86400000;
+const $=id=>document.getElementById(id),DAY=86400000;
 const paths={calendar:'M5 4h14a2 2 0 0 1 2 2v14H3V6a2 2 0 0 1 2-2ZM3 9h18M8 2v5M16 2v5',plus:'M12 5v14M5 12h14',chart:'M5 20V11M12 20V4M19 20V8',user:'M20 21v-3a8 8 0 0 0-16 0v3M16 6a4 4 0 1 1-8 0 4 4 0 0 1 8 0',leaf:'M20 3C10 2 3 7 5 16c8 6 16-1 15-13ZM5 20 16 8',layers:'m12 3 10 6-10 6L2 9l10-6ZM2 14l10 6 10-6',left:'m15 5-7 7 7 7',right:'m9 5 7 7-7 7',book:'M3 4c4-2 7-1 9 1 2-2 5-3 9-1v15c-4-2-7-1-9 1-2-2-5-3-9-1ZM12 5v15',gift:'M3 8h18v4H3ZM5 12v9h14v-9M12 8v13M12 8C3 8 6 0 10 4ZM12 8c9 0 6-8 2-4Z',close:'m6 6 12 12M6 18 18 6',check:'m5 12 4 4L19 6',edit:'m4 16 12-12 4 4L8 20H4v-4ZM13 7l4 4',trash:'M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7M14 10v7'};
 const icon=(name)=>'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="'+(paths[name]||paths.calendar)+'"/></svg>';
 paths.sparkle='m12 2 2.8 7.2L22 12l-7.2 2.8L12 22l-2.8-7.2L2 12l7.2-2.8Z';
@@ -13,10 +13,49 @@ const typeHints={up:'开始当天第1天，按选中日期累计自然日',down:
 const uid=()=>globalThis.crypto?.randomUUID?.()||'e-'+Date.now()+'-'+Math.random().toString(36).slice(2);
 let page='calendar',selected=today,view=date(today),draft=null,original='',editingId=null,activeEvent=null,saving=false,lastFocus=null,storageIssue='';
 let statsPeriod='month',statsMode='category',customRange=null,statsDetail=null;
-let app={schemaVersion:2,events:[],records:{},settings:{aiEnabled:false},sampleData:true};
-function seed(){const birthday=today,exam=new Date(date(today).getTime()+28*DAY),start=new Date(date(today).getTime()-10*DAY);return {schemaVersion:2,events:[{id:'sample-reading',title:'相识纪念日',type:'up',date:iso(start),calendarType:'solar',recurrence:{frequency:'none',weekdays:[]},endCondition:null,aiIncluded:false,note:'从这一天开始，记住一起走过的日子。',createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()},{id:'sample-exam',title:'考试',type:'down',date:iso(exam),calendarType:'solar',recurrence:{frequency:'once',weekdays:[]},endCondition:null,aiIncluded:false,note:'记住这一个重要日期。',createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()},{id:'sample-birthday',title:'小林生日',type:'birthday',date:birthday,calendarType:'solar',recurrence:{frequency:'yearly',weekdays:[]},endCondition:null,aiIncluded:false,note:'给重要的人留一句祝福。',createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()}],records:{},settings:{aiEnabled:false},sampleData:true}}
-try{const raw=localStorage.getItem(KEY);if(raw){const data=JSON.parse(raw);if(data.schemaVersion!==2){app=seed();localStorage.setItem(KEY,JSON.stringify(app))}else{if(!Array.isArray(data.events)||!data.events.every(e=>e&&typeof e.id==='string'&&typeof e.title==='string'&&types[e.type]&&/^\d{4}-\d{2}-\d{2}$/.test(e.date)&&e.recurrence)||!data.settings)throw Error('数据格式无法读取');app=data}}else{app=seed();localStorage.setItem(KEY,JSON.stringify(app))}}catch(e){storageIssue='本地数据暂时无法读取或保存，原数据已保留。';app={...app,sampleData:false}}
-function transaction(change){const latest=localStorage.getItem(KEY);const base=latest?JSON.parse(latest):app;const next=JSON.parse(JSON.stringify(base));change(next);if(storageIssue)throw Error(storageIssue);localStorage.setItem(KEY,JSON.stringify(next));app=next}
+const schemaVersion=window.WanshiliStorage.schemaVersion;
+let app={schemaVersion,revision:-1,generation:0,events:[],settings:{aiEnabled:false},sampleData:false};
+let storeReady=false,editorGeneration=0,detailGeneration=0;
+function seed(){const birthday=today,exam=new Date(date(today).getTime()+28*DAY),start=new Date(date(today).getTime()-10*DAY);return {schemaVersion,revision:0,generation:0,events:[{id:'sample-reading',title:'相识纪念日',type:'up',date:iso(start),calendarType:'solar',recurrence:{frequency:'none',weekdays:[]},endCondition:null,aiIncluded:false,note:'从这一天开始，记住一起走过的日子。',createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()},{id:'sample-exam',title:'考试',type:'down',date:iso(exam),calendarType:'solar',recurrence:{frequency:'once',weekdays:[]},endCondition:null,aiIncluded:false,note:'记住这一个重要日期。',createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()},{id:'sample-birthday',title:'小林生日',type:'birthday',date:birthday,calendarType:'solar',recurrence:{frequency:'yearly',weekdays:[]},endCondition:null,aiIncluded:false,note:'给重要的人留一句祝福。',createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()}],records:{},settings:{aiEnabled:false},sampleData:true}}
+const store=window.WanshiliStorage.create({
+  indexedDB:window.indexedDB,
+  legacy:{getItem:key=>localStorage.getItem(key)},
+  seed,
+  validEvent:event=>event&&typeof event.id==='string'&&typeof event.title==='string'&&
+    Object.hasOwn(types,event.type)&&R.validDay(event.date)&&event.recurrence
+});
+let channel;
+try{channel=new BroadcastChannel('wanshili-product-updated')}catch{}
+async function transaction(change){
+  if(!storeReady)throw Error(storageIssue||'正在读取本地数据，请稍候。');
+  const next=await store.update(change);
+  if(next.revision>=app.revision)app=next;
+  channel?.postMessage(next.revision);
+}
+async function refreshData(){
+  if(!storeReady)return;
+  try{
+    const next=await store.read();
+    if(next?.schemaVersion===schemaVersion&&next.revision>app.revision){app=next;render()}
+  }catch{}
+}
+if(channel)channel.onmessage=refreshData;
+window.addEventListener('focus',refreshData);
+window.addEventListener('pageshow',refreshData);
+function assertGeneration(data,generation){
+  if(data.generation!==generation)throw Error('本地日程已在另一个标签页恢复，请重新打开事项。');
+}
+async function exportBackup(){
+  try{
+    const data=await store.backup();
+    const url=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}));
+    const link=document.createElement('a');
+    link.href=url;
+    link.download='万事历本地备份-'+today+'.json';
+    link.click();
+    setTimeout(()=>URL.revokeObjectURL(url),1000);
+  }catch(error){notify(error.message||'暂时无法导出备份。')}
+}
 function notify(message){$('app-toast').textContent=message;$('app-toast').hidden=false;clearTimeout(notify.timer);notify.timer=setTimeout(()=>$('app-toast').hidden=true,5000)}
 function rangeMonth(v){const y=v.getFullYear(),m=v.getMonth();return Array.from({length:new Date(y,m+1,0).getDate()},(_,i)=>iso(new Date(y,m,i+1,12)))}
 function occurrence(e,day){return R.occurrence(e,day)}
@@ -34,6 +73,20 @@ const statTypes=['normal','down','up','birthday'];
 const rangeLabels={week:'本周',month:'本月',custom:'指定日期范围'};
 const modeLabels={category:'按类别',event:'按日程'};
 const rangeText=({start,end})=>start===end?fmt(start):fmt(start)+' – '+fmt(end);
+let lastStats;
+function statsSummary(counted){
+  const key=counted.start+'|'+counted.end+'|'+today;
+  if(lastStats?.events===app.events&&lastStats.key===key)return lastStats.result;
+  let first=today;
+  for(const event of app.events){
+    const dates=[event.date,...(event.segments||[]).map(part=>part.value?.date),...Object.keys(event.exceptions||{})];
+    for(const day of dates)if(day&&day<first)first=day;
+  }
+  const start=counted.start>first?counted.start:first;
+  const result=R.summary(app.events,R.datesInRange(start,counted.end),today);
+  lastStats={events:app.events,key,result};
+  return result;
+}
 function statsButton(label,attribute,value,selected){
   return '<button type="button" '+attribute+'="'+value+'" aria-pressed="'+selected+'">'+label+'</button>';
 }
@@ -66,8 +119,7 @@ function stats(){
   const chosen=R.statsRange(statsPeriod,today,customRange);
   const counted={start:chosen.start,end:chosen.end<today?chosen.end:R.addDays(today,-1)};
   const hasPast=counted.start<=counted.end;
-  const days=hasPast?R.datesInRange(counted.start,counted.end):[];
-  const s=R.summary(app.events,days,today);
+  const s=statsSummary(counted);
   const category=statsDetail?.category;
   const id=statsDetail?.id;
   const entry=category?s.details[id]?.types[category]:s.details[id];
@@ -128,7 +180,8 @@ function settings(){
     profileSwitch('month-reminder','月末回顾提醒',ai?'保存每月最后一天的提醒偏好':'开启 AI 习惯分析后可用',ai&&(app.settings.monthReminder??true),!ai)+
     '<div class="profile-preview">'+profileRow('sparkle','查看月末提醒示例','查看提醒和习惯总结的演示','data-preview="habit-reminder"')+'</div></section>'+
     '<section class="settings-panel"><h2>数据与帮助</h2>'+profileRow('user','云同步','查看同步成功、失败和编辑冲突示例','data-preview="sync"')+profileRow('leaf','隐私说明','查看浏览器本机数据说明','data-preview="privacy"')+
-    '<p>本机日程保存在当前浏览器。恢复示例前会再次确认。</p>'+(storageIssue?'<p class="save-error">'+esc(storageIssue)+'</p>':'')+
+    '<p>日程保存在当前浏览器。可以导出本机备份。</p>'+(storageIssue?'<p class="save-error">'+esc(storageIssue)+'</p>':'')+
+    '<button class="settings-action" data-action="export-backup">导出本地备份</button>'+
     '<button class="settings-action" data-action="reset">恢复示例数据</button></section></div>';
 }
 function openCreation(){
@@ -154,7 +207,23 @@ function handleStatsButton(node){
 function render(){nav();({calendar,stats,settings}[page])();icons()}
 function openModal(dialog){if(!dialog.open){lastFocus=document.activeElement;dialog.showModal()}}
 function closeModal(dialog){dialog.close();if(dialog.id==='event-dialog')releaseEditLock();lastFocus?.focus?.()}
-function openEditor(id=null){if(id&&heldLock!==id){acquireEditLock(id,()=>openEditor(id));return;}$('day-dialog').close();editingId=id;const event=id?R.shown(app.events.find(e=>e.id===id),selected):null;draft=event?JSON.parse(JSON.stringify(event)):{id:uid(),title:'',type:'up',date:selected,calendarType:'solar',recurrence:{frequency:'none',weekdays:[]},endCondition:null,aiIncluded:false,note:''};original=JSON.stringify(draft);drawEditor();openModal($('event-dialog'))}
+function openEditor(id=null,initialType='up'){
+  if(!storeReady){notify(storageIssue||'正在读取本地数据，请稍候。');return}
+  if(id&&heldLock!==id){acquireEditLock(id,()=>openEditor(id));return}
+  const event=id?R.shown(app.events.find(e=>e.id===id),selected):null;
+  if(id&&!event){releaseEditLock();notify('事项已变更，请重新打开。');return}
+  $('day-dialog').close();
+  editingId=id;
+  editorGeneration=app.generation;
+  draft=event?structuredClone(event):{
+    id:uid(),title:'',type:initialType,date:selected,calendarType:'solar',
+    recurrence:{frequency:initialType==='normal'?'once':'none',weekdays:[]},
+    endCondition:initialType==='normal'?1:null,aiIncluded:false,note:''
+  };
+  original=JSON.stringify(draft);
+  drawEditor();
+  openModal($('event-dialog'));
+}
 function drawEditor(error='',fieldError=false){const previousScroll=$('event-form')?.querySelector('.type-tabs').scrollLeft||0;const birthday=draft.type==='birthday',locked=!!editingId&&typeLocked(app.events.find(e=>e.id===editingId));$('event-dialog').innerHTML='<form id="event-form" data-theme="'+draft.type+'" novalidate><header class="dialog-header"><button type="button" class="icon-button text-button" data-action="cancel-editor" aria-label="返回">'+icon('left')+'</button><h2 id="event-dialog-title">'+(editingId?'编辑事项':'新建事项')+'</h2><button type="button" class="text-button" data-action="cancel-editor">取消</button></header><div class="form-body"><div class="type-tabs" role="group" aria-label="事项类型">'+Object.entries(types).map(([t,label])=>'<button type="button" class="'+(t===draft.type?'active ':'')+t+'" data-type="'+t+'" '+(locked&&t!==draft.type?'disabled title="开始日期已过，从第二天起不可更改类型"':'')+' aria-pressed="'+(t===draft.type)+'">'+label+'</button>').join('')+'</div>'+(locked?'<p class="demo-note">开始日期已过，从第二天起不可更改类型。</p>':'')+'<div class="form-field"><label for="event-name">名称</label><input id="event-name" name="title" placeholder="请输入事项名称" value="'+esc(draft.title)+'" aria-invalid="'+fieldError+'" '+(fieldError?'aria-describedby="name-error"':'')+'>'+(fieldError?'<span class="field-error" id="name-error">请填写事项名称</span>':'')+'</div>'+(birthday?'<div class="form-field"><label for="calendar-type">日期类型</label><select id="calendar-type" name="calendarType"><option value="solar" '+(draft.calendarType==='solar'?'selected':'')+'>公历</option><option value="lunar" '+(draft.calendarType==='lunar'?'selected':'')+'>农历（换算待接入）</option></select></div>':'')+'<div class="form-field"><span class="form-label">'+(birthday?'生日日期':draft.type==='down'?'目标日期':draft.type==='normal'?'日期':'开始日期')+'</span><button type="button" class="field-button" data-action="date-picker">'+esc(fmt(draft.date))+icon('right')+'</button></div>'+(draft.type!=='up'?'<div class="form-field"><span class="form-label">循环</span><button type="button" class="field-button" data-action="repeat-picker" '+(birthday?'disabled':'')+'>'+esc(recurrenceLabel(draft))+(!birthday?icon('right'):'')+'</button></div>':'')+(draft.type!=='up'?'<div class="form-field"><span class="form-label">持续次数</span><button type="button" class="field-button" data-action="duration-picker" '+(draft.recurrence.frequency==='once'?'disabled':'')+'>'+(draft.recurrence.frequency==='once'?'1 次':draft.endCondition?draft.endCondition+' 次':'不设结束')+'</button></div>':'')+'<div class="field-hint">'+typeHints[draft.type]+'</div><div class="ai-field"><div><strong>参与 AI 习惯分析</strong><small>仅保存开关，AI服务尚未接入</small></div><label class="switch"><input type="checkbox" name="aiIncluded" aria-label="此事项参与AI分析" '+(draft.aiIncluded?'checked':'')+'><span></span></label></div><div class="form-field"><label for="event-note">备注</label><textarea id="event-note" name="note" placeholder="选填">'+esc(draft.note)+'</textarea></div>'+(error?'<div class="save-error" role="alert">'+esc(error)+'</div>':'')+'</div><footer class="dialog-footer"><button class="event-save" type="submit" '+(saving?'disabled':'')+'>'+(saving?'保存中…':error&&!fieldError?'重试保存':editingId?'保存修改':'保存')+'</button></footer></form>';$('event-form').querySelector('.type-tabs').scrollLeft=previousScroll;if(saving)$('event-form').querySelectorAll('input,textarea,select,button').forEach(x=>x.disabled=true)}
 function sub(title,body){$('sub-dialog').innerHTML='<header class="dialog-header"><h2 id="sub-title">'+title+'</h2><button class="icon-button text-button" data-action="close-sub" aria-label="关闭">'+icon('close')+'</button></header><div class="sub-body">'+body+'</div>';if(!$('sub-dialog').open)$('sub-dialog').showModal()}
 const option=(label,value,selectedValue)=>'<button class="option-row '+(value===selectedValue?'selected':'')+'" data-frequency="'+value+'">'+label+'<span class="radio"></span></button>';
@@ -166,7 +235,7 @@ function setRecurrence(recurrence){
   draft.recurrence=recurrence;
 }
 function cancelEditor(){if(saving)return;if(JSON.stringify(draft)!==original){sub('放弃本次修改？','<p>填写内容尚未保存，放弃后无法恢复本次修改。</p><div class="sub-actions"><button class="primary" data-action="close-sub">继续编辑</button><button data-action="discard-editor">放弃修改</button></div>')}else closeModal($('event-dialog'))}
-function typeLocked(event){return event&&(event.date<today||(event.segments||[]).some(s=>s.value?.date<today))}
+function typeLocked(event,day=today){return event&&(event.date<day||(event.segments||[]).some(s=>s.value?.date<day))}
 let heldLock=null,releaseLockCallback=null;
 function releaseEditLock(){releaseLockCallback?.();releaseLockCallback=null;heldLock=null}
 function acquireEditLock(id,ready,report=notify){
@@ -183,16 +252,85 @@ function acquireEditLock(id,ready,report=notify){
     let release;
     const done=new Promise(resolve=>{release=resolve});
     releaseLockCallback=release;
-    try{ready();await done}
+    try{await ready();await done}
     finally{if(releaseLockCallback===release)releaseEditLock()}
   }).catch(()=>report('无法取得编辑权限，请重试。'));
 }
 let chosenScope='one';
-function scopePicker(kind){const past=selected<today;chosenScope=past?'following':'one';sub(kind==='delete'?'删除哪些日程？':'将修改应用于',['one','following','series'].map((v,i)=>'<button class="option-row '+(v===chosenScope?'selected':'')+'" data-select-scope="'+v+'" '+(past&&v==='one'?'disabled':'')+'>'+['仅这一次','这次及之后','整个系列'][i]+'<span class="radio"></span></button>').join('')+'<p class="scope-note">过去的日程已发生并保留。仅这一次影响选中日；这次及之后影响选中日起的未过去计划；整个系列覆盖全部未过去计划。</p><div class="sub-actions"><button data-action="close-sub">取消</button><button class="'+(kind==='delete'?'danger':'primary')+'" data-apply-scope="'+kind+'">'+(kind==='delete'?'确认删除':'确认保存')+'</button></div>')}
-async function save(scope=null){if(saving)return;draft.title=draft.title.trim();if(!draft.title){drawEditor('',true);$('event-name').focus();return}if(R.leapDay(draft.date)){drawEditor('2月29日暂不生成事项，请选择其他日期。');return}if(draft.calendarType==='lunar'){drawEditor('农历暂未接入，填写内容已保留。');return}if(draft.type==='up'&&draft.endDate&&draft.date>draft.endDate){drawEditor('开始日期不能晚于已记录的结束日期。');return}const old=app.events.find(e=>e.id===editingId);if(typeLocked(old)&&draft.type!==old.type){drawEditor('开始日期已过，从第二天起不可更改类型。');return}if(editingId&&!scope){scopePicker('edit');return}saving=true;if($('sub-dialog').open)$('sub-dialog').close();drawEditor();await new Promise(r=>setTimeout(r,300));try{transaction(data=>{const copy=R.normalize(JSON.parse(JSON.stringify(draft)));delete copy.segments;delete copy.exceptions;if(editingId){const event=data.events.find(e=>e.id===editingId);R.rewrite(event,copy,scope,selected,today)}else{copy.createdAt=new Date().toISOString();copy.updatedAt=copy.createdAt;data.events.push(copy)}});selected=editingId?selected:draft.date;view=date(selected);page='calendar';saving=false;closeModal($('event-dialog'));render();notify('已保存')}catch(e){saving=false;drawEditor('保存失败，填写内容已保留。'+(e.message||'请重试。'))}}
+function updateScopeCount(){
+  const label=$('scope-count');
+  if(!label)return;
+  const event=app.events.find(e=>e.id===editingId);
+  const remaining=event?R.remainingCount(event,draft,chosenScope,selected,today):null;
+  label.textContent=remaining===null?'':'按表单里的总次数计算，本次修改后还会安排 '+remaining+' 次。';
+}
+function scopePicker(kind){
+  const deleting=kind==='delete';
+  const event=app.events.find(e=>e.id===(deleting?activeEvent:editingId));
+  const displayed=R.shown(event,selected);
+  if(!displayed){if(deleting)releaseEditLock();notify('事项已变更，请重新打开。');return}
+  const target=R.actionDate(event,selected);
+  const single=R.standaloneCountdown(displayed);
+  const unavailable=!target||target<today;
+  chosenScope=unavailable&&!single?'following':'one';
+  const description=single
+    ? '<p>'+(!target?'暂时找不到目标日。':target<today?'当前目标日已过去，历史日程保留。':
+      (deleting?'将删除 ':'将修改 ')+fmt(target)+'的「'+esc(displayed.title)+'」。')+'</p>'
+    : '<p class="scope-note">过去的日程已发生并保留。仅这一次影响'+
+      (target&&target!==selected?' '+fmt(target)+'的到期计划':'选中日')+
+      '。这次及之后以选中日为起点。整个系列覆盖全部未过去计划。</p>'+
+      ['one','following','series'].map((v,i)=>'<button class="option-row '+(v===chosenScope?'selected':'')+'" data-select-scope="'+v+'" '+(unavailable&&v==='one'?'disabled':'')+'>'+['仅这一次','这次及之后','整个系列'][i]+'<span class="radio"></span></button>').join('')+
+      (deleting?'':'<p id="scope-count" role="status"></p>');
+  sub(single?(deleting?'删除倒数日？':'保存倒数日修改？'):(deleting?'删除哪些日程？':'将修改应用于'),description+
+    '<div class="sub-actions"><button data-action="close-sub">取消</button><button class="'+(deleting?'danger':'primary')+
+    '" data-apply-scope="'+kind+'" '+(single&&unavailable?'disabled':'')+'>'+(deleting?'确认删除':'确认保存')+'</button></div>');
+  updateScopeCount();
+}
+async function save(scope=null){
+  if(saving)return;
+  draft.title=draft.title.trim();
+  if(!draft.title){drawEditor('',true);$('event-name').focus();return}
+  if(!R.validDay(draft.date)||R.leapDay(draft.date)){drawEditor('请选择有效日期，2月29日暂不生成事项。');return}
+  if(draft.calendarType==='lunar'){drawEditor('农历暂未接入，填写内容已保留。');return}
+  if(draft.type==='up'&&draft.endDate&&draft.date>draft.endDate){drawEditor('开始日期不能晚于已记录的结束日期。');return}
+  if(editingId&&!scope){scopePicker('edit');return}
+  const id=editingId,day=selected,generation=editorGeneration;
+  const copy=R.normalize(structuredClone(draft));
+  delete copy.limitUsed;
+  delete copy.limitFrom;
+  saving=true;
+  if($('sub-dialog').open)$('sub-dialog').close();
+  drawEditor();
+  try{
+    await transaction(data=>{
+      assertGeneration(data,generation);
+      const currentDay=iso(new Date());
+      if(id){
+        const event=data.events.find(e=>e.id===id);
+        if(typeLocked(event,currentDay)&&copy.type!==event.type)throw Error('开始日期已过，从第二天起不可更改类型。');
+        R.rewrite(event,copy,scope,day,currentDay);
+      }else{
+        copy.createdAt=new Date().toISOString();
+        copy.updatedAt=copy.createdAt;
+        data.events.push(copy);
+      }
+    });
+    selected=id?day:copy.date;
+    view=date(selected);
+    page='calendar';
+    saving=false;
+    closeModal($('event-dialog'));
+    render();
+    notify('已保存');
+  }catch(error){
+    saving=false;
+    drawEditor('保存失败，填写内容已保留。'+(error.message||'请重试。'));
+  }
+}
 function detail(id){
   $('day-dialog').close();
   activeEvent=id;
+  detailGeneration=app.generation;
   const raw=app.events.find(event=>event.id===id);
   const event=R.shown(raw,selected);
   if(!event)return;
@@ -239,7 +377,7 @@ function confirmStop(day=iso(new Date()),dayChanged=false){
     '<div class="sub-actions"><button data-action="close-sub">取消</button><button class="primary" data-action="apply-stop" data-end-date="'+day+'">确认结束</button></div>');
 }
 function stopCountup(button){
-  const id=activeEvent;
+  const id=activeEvent,generation=detailGeneration;
   const pending=()=>$('sub-dialog').open&&button.isConnected&&id===activeEvent;
   const report=message=>{
     if(!pending())return;
@@ -249,7 +387,7 @@ function stopCountup(button){
     button.disabled=false;
   };
   button.disabled=true;
-  acquireEditLock(id,()=>{
+  acquireEditLock(id,async()=>{
     try{
       if(!pending())return;
       today=iso(new Date());
@@ -257,7 +395,11 @@ function stopCountup(button){
         confirmStop(today,true);
         return;
       }
-      transaction(data=>R.endCountup(data.events.find(event=>event.id===id),today));
+      await transaction(data=>{
+        assertGeneration(data,generation);
+        if(iso(new Date())!==today)throw Error('日期已变更，请关闭后重新确认。');
+        R.endCountup(data.events.find(event=>event.id===id),today);
+      });
       $('sub-dialog').close();
       selected=today;
       view=date(today);
@@ -271,8 +413,40 @@ function stopCountup(button){
   },report);
 }
 function confirmDelete(){if(heldLock!==activeEvent){acquireEditLock(activeEvent,confirmDelete);return}scopePicker('delete')}
-function deleteSelected(scope){try{transaction(data=>{const event=data.events.find(e=>e.id===activeEvent);R.rewrite(event,null,scope,selected,today)});$('sub-dialog').close();closeModal($('event-dialog'));render();notify('已取消对应计划，过去日程已保留')}catch(e){notify(e.message||'删除失败，原日程已保留')}}
-document.addEventListener('click',e=>{const node=e.target.closest('button,[data-page]');if(!node)return;if(saving&&node.closest('#event-dialog'))return;if(node.dataset.preview){preview.show(node.dataset.preview);return}if(page==='stats'&&handleStatsButton(node))return;if(node.dataset.page){page=node.dataset.page;statsDetail=null;render();return}if(node.dataset.date){selected=node.dataset.date;view=date(selected);render();if(innerWidth<=700){$('day-dialog').innerHTML=$('page-content').querySelector('.day-panel').outerHTML;const close=document.createElement('button');close.className='text-button';close.dataset.action='close-day';close.textContent='关闭';$('day-dialog').querySelector('.day-panel-header').append(close);$('day-dialog').showModal()}return}if(node.dataset.event){detail(node.dataset.event);return}if(node.dataset.summaryDate){selected=node.dataset.summaryDate;view=date(selected);page='calendar';$('sub-dialog').close();render();return}if(node.dataset.selectScope){chosenScope=node.dataset.selectScope;$('sub-dialog').querySelectorAll('[data-select-scope]').forEach(b=>b.classList.toggle('selected',b===node));return}if(node.dataset.applyScope){if(node.dataset.applyScope==='delete')deleteSelected(chosenScope);else save(chosenScope);return}if(node.dataset.type){
+async function deleteSelected(scope,button){
+  const id=activeEvent,day=selected,generation=detailGeneration;
+  button.disabled=true;
+  try{
+    await transaction(data=>{
+      assertGeneration(data,generation);
+      const event=data.events.find(e=>e.id===id);
+      R.rewrite(event,null,scope,day,iso(new Date()));
+    });
+    $('sub-dialog').close();
+    closeModal($('event-dialog'));
+    render();
+    notify('已取消对应计划，过去日程已保留');
+  }catch(error){
+    button.disabled=false;
+    notify(error.message||'删除失败，原日程已保留');
+  }
+}
+async function resetDemo(button){
+  button.disabled=true;
+  try{
+    await transaction((current,archive)=>{
+      archive(current);
+      return {...seed(),generation:current.generation+1};
+    });
+    $('sub-dialog').close();
+    render();
+    notify('已恢复示例，恢复前的数据可导出');
+  }catch(error){
+    button.disabled=false;
+    notify(error.message||'本地存储不可用，原数据已保留。');
+  }
+}
+document.addEventListener('click',e=>{const node=e.target.closest('button,[data-page]');if(!node)return;if(saving&&node.closest('#event-dialog'))return;if(node.dataset.preview){preview.show(node.dataset.preview);return}if(page==='stats'&&handleStatsButton(node))return;if(node.dataset.page){page=node.dataset.page;statsDetail=null;render();return}if(node.dataset.date){selected=node.dataset.date;view=date(selected);render();if(innerWidth<=700){$('day-dialog').innerHTML=$('page-content').querySelector('.day-panel').outerHTML;const close=document.createElement('button');close.className='text-button';close.dataset.action='close-day';close.textContent='关闭';$('day-dialog').querySelector('.day-panel-header').append(close);$('day-dialog').showModal()}return}if(node.dataset.event){detail(node.dataset.event);return}if(node.dataset.summaryDate){selected=node.dataset.summaryDate;view=date(selected);page='calendar';$('sub-dialog').close();render();return}if(node.dataset.selectScope){chosenScope=node.dataset.selectScope;$('sub-dialog').querySelectorAll('[data-select-scope]').forEach(b=>b.classList.toggle('selected',b===node));updateScopeCount();return}if(node.dataset.applyScope){if(node.dataset.applyScope==='delete')deleteSelected(chosenScope,node);else save(chosenScope);return}if(node.dataset.type){
   if(draft.type===node.dataset.type)return;
   draft.type=node.dataset.type;
   draft.calendarType='solar';
@@ -283,7 +457,7 @@ document.addEventListener('click',e=>{const node=e.target.closest('button,[data-
   return;
 }if(node.dataset.frequency){frequency(node.dataset.frequency);return}if(node.dataset.weekday){node.classList.toggle('selected');node.setAttribute('aria-pressed',node.classList.contains('selected'));return}
  const action=node.dataset.action;if(!action)return;const v=view;
- if(action==='close-day')$('day-dialog').close();else if(action==='create')openCreation();else if(action==='manual-create'){$('sub-dialog').close();openEditor()}else if(action==='previous'||action==='next'){v.setMonth(v.getMonth()+(action==='next'?1:-1),1);render()}else if(action==='today'){view=date(today);selected=today;render()}else if(action==='cancel-editor')cancelEditor();else if(action==='close-detail')closeModal($('event-dialog'));else if(action==='close-sub'){$('sub-dialog').close();if(!$('event-form'))releaseEditLock()}else if(action==='discard-editor'){$('sub-dialog').close();closeModal($('event-dialog'))}else if(action==='date-picker')sub('选择日期','<label for="picked-date">'+(draft.type==='down'?'目标日期':draft.type==='birthday'?'生日日期':'开始日期')+'</label><input id="picked-date" type="date" value="'+draft.date+'"><div class="sub-actions"><button class="primary" data-action="save-date">确认日期</button></div>');else if(action==='save-date'){if(!$('picked-date').value||!$('picked-date').validity.valid){notify('请选择有效日期');return}draft.date=$('picked-date').value;$('sub-dialog').close();drawEditor()}else if(action==='repeat-picker')repeatPicker();else if(action==='save-weekly'){const days=[...$('sub-dialog').querySelectorAll('[data-weekday].selected')].map(x=>Number(x.dataset.weekday));if(!days.length){notify('请至少选择一个星期');return}setRecurrence({frequency:'weekly',weekdays:days});$('sub-dialog').close();drawEditor()}else if(action==='save-monthly'){const input=$('month-day');if(!input.value||!input.validity.valid){notify('请输入1至31之间的日期');return}setRecurrence({frequency:'monthly',monthDay:Number(input.value),weekdays:[]});$('sub-dialog').close();drawEditor()}else if(action==='save-yearly'){const input=$('annual-date');if(!input.value||!input.validity.valid){notify('请选择有效日期');return}setRecurrence({frequency:'yearly',yearMonth:date(input.value).getMonth(),yearDay:date(input.value).getDate(),weekdays:[]});$('sub-dialog').close();drawEditor()}else if(action==='duration-picker')sub('持续次数','<label for="duration">计划出现次数</label><input id="duration" type="number" min="1" placeholder="不填写为不设结束" value="'+(draft.endCondition||'')+'"><p>按有效计划出现次数计算；填写3次则生成3次。月末回退算1次，跳过2月29日不占次数。</p><div class="sub-actions"><button data-action="no-duration">不设结束</button><button class="primary" data-action="save-duration">完成</button></div>');else if(action==='save-duration'){const input=$('duration');if(input.value&&!input.validity.valid){notify('请输入大于0的整数次数');return}draft.endCondition=input.value?Number(input.value):null;$('sub-dialog').close();drawEditor()}else if(action==='no-duration'){draft.endCondition=null;$('sub-dialog').close();drawEditor()}else if(action==='edit-detail')openEditor(activeEvent);else if(action==='stop-countup')confirmStop();else if(action==='apply-stop')stopCountup(node);else if(action==='delete-detail')confirmDelete();else if(action==='confirm-delete')deleteSelected('one');else if(action==='save-occurrence')save('one');else if(action==='reset')sub('恢复示例数据？','<p>将替换这个演示中已保存的事项与历史计划。</p><div class="sub-actions"><button data-action="close-sub">取消</button><button class="danger" data-action="confirm-reset">恢复示例</button></div>');else if(action==='confirm-reset'){try{localStorage.setItem(KEY,JSON.stringify(seed()));app=seed();storageIssue='';$('sub-dialog').close();render();notify('已恢复示例数据')}catch{notify('本地存储不可用，未替换数据')}}
+ if(action==='close-day')$('day-dialog').close();else if(action==='create')openCreation();else if(action==='manual-create'){$('sub-dialog').close();openEditor()}else if(action==='previous'||action==='next'){v.setMonth(v.getMonth()+(action==='next'?1:-1),1);render()}else if(action==='today'){view=date(today);selected=today;render()}else if(action==='cancel-editor')cancelEditor();else if(action==='close-detail')closeModal($('event-dialog'));else if(action==='close-sub'){$('sub-dialog').close();if(!$('event-form'))releaseEditLock()}else if(action==='discard-editor'){$('sub-dialog').close();closeModal($('event-dialog'))}else if(action==='date-picker')sub('选择日期','<label for="picked-date">'+(draft.type==='down'?'目标日期':draft.type==='birthday'?'生日日期':'开始日期')+'</label><input id="picked-date" type="date" value="'+draft.date+'"><div class="sub-actions"><button class="primary" data-action="save-date">确认日期</button></div>');else if(action==='save-date'){if(!$('picked-date').value||!$('picked-date').validity.valid){notify('请选择有效日期');return}draft.date=$('picked-date').value;$('sub-dialog').close();drawEditor()}else if(action==='repeat-picker')repeatPicker();else if(action==='save-weekly'){const days=[...$('sub-dialog').querySelectorAll('[data-weekday].selected')].map(x=>Number(x.dataset.weekday));if(!days.length){notify('请至少选择一个星期');return}setRecurrence({frequency:'weekly',weekdays:days});$('sub-dialog').close();drawEditor()}else if(action==='save-monthly'){const input=$('month-day');if(!input.value||!input.validity.valid){notify('请输入1至31之间的日期');return}setRecurrence({frequency:'monthly',monthDay:Number(input.value),weekdays:[]});$('sub-dialog').close();drawEditor()}else if(action==='save-yearly'){const input=$('annual-date');if(!input.value||!input.validity.valid){notify('请选择有效日期');return}setRecurrence({frequency:'yearly',yearMonth:date(input.value).getMonth(),yearDay:date(input.value).getDate(),weekdays:[]});$('sub-dialog').close();drawEditor()}else if(action==='duration-picker')sub('持续次数','<label for="duration">计划出现次数</label><input id="duration" type="number" min="1" placeholder="不填写为不设结束" value="'+(draft.endCondition||'')+'"><p>按有效计划出现次数计算；填写3次则生成3次。月末回退算1次，跳过2月29日不占次数。</p><div class="sub-actions"><button data-action="no-duration">不设结束</button><button class="primary" data-action="save-duration">完成</button></div>');else if(action==='save-duration'){const input=$('duration');if(input.value&&!input.validity.valid){notify('请输入大于0的整数次数');return}draft.endCondition=input.value?Number(input.value):null;$('sub-dialog').close();drawEditor()}else if(action==='no-duration'){draft.endCondition=null;$('sub-dialog').close();drawEditor()}else if(action==='edit-detail')openEditor(activeEvent);else if(action==='stop-countup')confirmStop();else if(action==='apply-stop')stopCountup(node);else if(action==='delete-detail')confirmDelete();else if(action==='confirm-delete')deleteSelected('one',node);else if(action==='save-occurrence')save('one');else if(action==='export-backup')exportBackup();else if(action==='reset')sub('恢复示例数据？','<p>将替换本机日程。恢复前的数据会保存在本地备份中。</p><div class="sub-actions"><button data-action="close-sub">取消</button><button class="danger" data-action="confirm-reset">恢复示例</button></div>');else if(action==='confirm-reset')resetDemo(node);
 });
 document.addEventListener('input',e=>{if(saving||!draft||!e.target.closest('#event-form'))return;const el=e.target;if(el.name==='title'){draft.title=el.value;el.setAttribute('aria-invalid','false');$('name-error')?.remove()}if(el.name==='note')draft.note=el.value;if(el.name==='aiIncluded')draft.aiIncluded=el.checked;if(el.name==='calendarType')draft.calendarType=el.value});
 $('sub-dialog').addEventListener('submit',event=>{
@@ -291,11 +465,11 @@ $('sub-dialog').addEventListener('submit',event=>{
   event.preventDefault();
   applyStatsRange();
 });
-document.addEventListener('change',event=>{
+document.addEventListener('change',async event=>{
   const input=event.target;
   if(input.id!=='global-ai'&&input.id!=='month-reminder')return;
   try{
-    transaction(data=>{
+    await transaction(data=>{
       if(input.id==='global-ai'){
         data.settings.aiEnabled=input.checked;
         if(input.checked)data.settings.monthReminder??=true;
@@ -310,8 +484,18 @@ document.addEventListener('change',event=>{
   }
 });
 $('event-dialog').addEventListener('submit',e=>{e.preventDefault();save()});$('event-dialog').addEventListener('cancel',e=>{e.preventDefault();if($('event-form'))cancelEditor();else closeModal($('event-dialog'))});$('event-dialog').addEventListener('click',e=>{if(e.target===$('event-dialog')){if($('event-form'))cancelEditor();else closeModal($('event-dialog'))}});$('sub-dialog').addEventListener('click',e=>{if(e.target===$('sub-dialog'))$('sub-dialog').close()});$('header-add').onclick=openCreation;$('mobile-add').onclick=openCreation;
-$('event-dialog').addEventListener('close',releaseEditLock);setInterval(()=>{const next=iso(new Date());if(next!==today){today=next;if(!$('event-dialog').open)render()}},30000);window.addEventListener('pagehide',releaseEditLock);window.addEventListener('storage',e=>{if(e.key===KEY&&e.newValue){try{app=JSON.parse(e.newValue);render()}catch{}}});
+$('event-dialog').addEventListener('close',releaseEditLock);setInterval(()=>{const next=iso(new Date());if(next!==today){today=next;if(!$('event-dialog').open)render()}},30000);window.addEventListener('pagehide',releaseEditLock);
 const preview=window.WanshiliPreview({open:sub,rerender:render});
 window.WanshiliApp={rules:R,occurrence,summary,get data(){return JSON.parse(JSON.stringify(app))},get selected(){return selected},get today(){return today},render};
 render();
+store.initialize().then(data=>{
+  app=data;
+  storeReady=true;
+  render();
+  if(location.hash==='#new-normal')openEditor(null,'normal');
+}).catch(error=>{
+  storageIssue=error.message||'本地存储暂不可用，原数据已保留。';
+  render();
+  notify(storageIssue);
+});
 })();

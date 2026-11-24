@@ -186,20 +186,30 @@
       else if (hot.dataset.v06To) go(hot.dataset.v06To);
     },true);
 
-    const params = new URLSearchParams(location.search);
-    const selected = params.get('screen');
-    if (catalog[selected]) {
-      go(selected,false);
-      const note = params.get('note');
-      if (note && reviewNotes.some(item => item.id===note)) selectNote(note);
-    }
   }
 
-  fetch(new URL('assets/v06-scenes.json?v=1',location.href))
+  const scenesReady=fetch(new URL('assets/v06-scenes.json?v=1',location.href))
     .then(response => {
       if (!response.ok) throw new Error('V0.6 prototype fetch failed');
       return response.json();
     })
     .then(initialize)
-    .catch(error => console.error(error));
+    .catch(error => {
+      const fallback=document.createElement('p');
+      fallback.textContent='部分原型暂未载入。刷新后重试，或打开产品试用版。';
+      document.querySelector('.prototype').append(fallback);
+      console.error(error);
+    });
+  const linkedScreen=initialLink.get('screen');
+  const linkedNote=initialLink.get('note');
+  if(linkedScreen||linkedNote)Promise.all([documentsReady,sharedNotesReady,scenesReady]).then(()=>{
+    if(linkedScreen&&Array.from(screen.options).some(option=>option.value===linkedScreen)){
+      screen.value=linkedScreen;
+      screen.onchange({target:screen});
+    }
+    if(linkedNote){
+      if(reviewNotes.some(note=>note.id===linkedNote))selectNote(linkedNote);
+      else toast('找不到此批注，已保留原型页面。');
+    }
+  });
 })();

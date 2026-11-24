@@ -56,4 +56,39 @@ const deleted=R.summary([movedSport],R.datesInRange('2026-04-08','2026-04-22'),'
 check(deleted.byEvent.sport.join()===shifted.byEvent.sport.join(),'取消后续计划后仍能统计历史日期');
 const emptyRange=R.summary([sport],R.datesInRange('2026-04-15','2026-04-22'),'2026-04-15');
 check(emptyRange.total.length===0,'范围全部在今天或未来时为零天');
+const exam=make({date:'2026-11-30',recurrence:{frequency:'once'}});
+check(R.actionDate(exam,'2026-11-24')==='2026-11-30','提前查看倒数时确认框指向真正的目标日');
+R.rewrite(exam,null,'one','2026-11-24','2026-11-24');
+check(!R.occurrence(exam,'2026-11-30')&&!R.shown(exam,'2026-11-24'),'提前删除单次倒数同时移除标记和预览');
+const pastExam=make({date:'2026-11-22',recurrence:{frequency:'once'}});
+assert.throws(()=>R.rewrite(pastExam,null,'one','2026-11-24','2026-11-24'),/目标日已过去/);
+check(R.occurrence(pastExam,'2026-11-22'),'已经过期的目标日仍可回看');
+const nextExam=make({date:'2026-11-02',recurrence:{frequency:'weekly',weekdays:[1]}});
+R.rewrite(nextExam,null,'one','2026-11-24','2026-11-24');
+check(!R.occurrence(nextExam,'2026-11-30')&&R.occurrence(nextExam,'2026-12-07'),'循环倒数只取消确认框显示的那一次');
+
+const eligible=(event,start,end)=>[...R.datesInRange(start,end)].filter(day=>R.occurrence(event,day));
+const workout=make({type:'normal',date:'2026-11-02',endCondition:5});
+const monday={...workout,recurrence:{frequency:'weekly',weekdays:[1]}};
+check(R.remainingCount(workout,monday,'following','2026-11-05','2026-11-05')===2,'已保留三次后仅剩两次');
+R.rewrite(workout,monday,'following','2026-11-05','2026-11-05');
+check(eligible(workout,'2026-11-02','2026-12-31').join()==='2026-11-02,2026-11-03,2026-11-04,2026-11-09,2026-11-16','改频率后历史加未来仍等于五次');
+const movedAndCancelled=make({type:'normal',date:'2026-11-02',endCondition:5});
+R.rewrite(movedAndCancelled,null,'one','2026-11-03','2026-11-02');
+R.rewrite(movedAndCancelled,{...movedAndCancelled,date:'2026-11-10'},'one','2026-11-04','2026-11-02');
+const mondaySeven={...monday,endCondition:7};
+check(R.remainingCount(movedAndCancelled,mondaySeven,'series','2026-11-08','2026-11-05')===6,'取消和改远的实例不计入修改起点前');
+R.rewrite(movedAndCancelled,mondaySeven,'series','2026-11-08','2026-11-05');
+check(eligible(movedAndCancelled,'2026-11-02','2026-12-31').length===7,'手动调整总次数时扣除实际保留的次数');
+
+for(const recurrence of [
+  {frequency:'daily'},{frequency:'weekly',weekdays:[1,3,6]},{frequency:'weekends'},
+  ...[15,29,30,31].map(monthDay=>({frequency:'monthly',monthDay})),
+  {frequency:'yearly',yearMonth:1,yearDay:29},{frequency:'yearly',yearMonth:2,yearDay:1}
+]){
+  const event=make({type:'normal',date:'2027-04-15',recurrence});
+  const expected=eligible(event,'2027-04-15','2031-03-31').slice(0,18);
+  const actual=eligible({...event,endCondition:18},'2027-04-15','2031-03-31');
+  check(actual.join()===expected.join(),'限制次数与逐日筛选一致 '+JSON.stringify(recurrence));
+}
 console.log(JSON.stringify({passed:true,checks:n}));

@@ -1,5 +1,5 @@
 # 万事历 原型与流程
-版本 V0.6 · 更新日期 2026-11-24
+版本 V0.6.1 · 更新日期 2026-11-24
 
 [产品前端](https://yushumeng532.github.io/wanshili/app.html) · [工作台](https://yushumeng532.github.io/wanshili/) · [Figma演示](https://www.figma.com/proto/8aE2Z9hUhKtxgXjnEuCY7I?node-id=3-4&page-id=2%3A2&starting-point-node-id=3%3A4&scaling=scale-down&content-scaling=fixed&show-proto-sidebar=1)
 
@@ -34,7 +34,7 @@
 
 ## 3. 查看与评审
 
-工作台网页演示可填写表单并完成创建、详情、编辑与删除；数据仅在本次页面保留。标注模式通过原型锚点和文档章节相互定位。Figma保留可编辑图层、原型连线和已有动效；使用固定示例说明规则。
+工作台网页演示使用预设数据。普通日程的标注画面提供「打开试用版，创建普通日程」，可进入实际表单试用。标注模式通过原型锚点和文档章节相互定位，分享链接在画框和文档就绪后选中对应批注。Figma保留可编辑图层、原型连线和已有动效；使用固定示例说明规则。
 
 所有画框按390 × 844等比显示。正计时取消循环和次数；详情取消人工发生按钮；类型锁定、历史保留、月末回退、闰日跳过与AI未接入均有说明。运行时日期计算、保存、跨标签页保护与统计在独立产品前端中验证。
 

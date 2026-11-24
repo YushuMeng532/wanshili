@@ -106,7 +106,7 @@ const screenBase=$('screen').onchange;$('screen').onchange=e=>{layerBase='';cons
    return;
  }
  editing=['3:16','3:17','137:3616','review:fail'].includes(id);draft=sample();if(id==='3:8'||id==='137:3529')draft.name='';if(['3:10','3:12','137:3182','137:3804','137:3911','review:count'].includes(id)){draft.type='down';draft.repeat='仅一次'}if(id==='3:11'||id==='137:3293'){draft.type='birthday';draft.repeat='每年'}if(['3:3','3:5','3:15','3:16','3:18','144:7580'].includes(id)&&!records.length)records=[asEvent(sample()),asEvent({...sample(),name:'考试',type:'down',date:'2026-12-15',repeat:'仅一次'}),asEvent({...sample(),name:'小林生日',type:'birthday',repeat:'每年'})];baseline=JSON.stringify(draft);dirty=false;screenBase(e)};
-reviewCaption.textContent='390 × 844 原尺寸等比缩放 · 网页演示可填写并完成新建、编辑、删除；标注模式查看文档连线。V0.5：过去日程自动已发生；演示数据仅在本次页面中保留。';
+reviewCaption.textContent='网页演示使用预设日程，填写的数据保留在当前页面。切换标注可定位对应文档。';
 window.WanshiliPrototype={get records(){return records},get draft(){return draft},selectedISO};baseline=JSON.stringify(draft);
 if($('screen').value==='review:normal'){$('screen').onchange({target:$('screen')});}else setReviewMode(true);
 })();

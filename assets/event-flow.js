@@ -21,7 +21,7 @@ function normalSchedulePreview(){
   row('持续次数','1 次','flag',false)+
   '<div class="hint">只在计划发生的日期显示日程</div>'+ai()+
   row('备注','<div class="input placeholder">选填</div>','note',false)+'</div>';
- return base('新建事项',body,'保存')+'<p class="normal-preview-caption">设计预览 · 待实现</p>';
+ return base('新建事项',body,'保存')+'<p class="normal-preview-caption"><a href="app.html#new-normal" target="_blank" rel="noopener">打开试用版，创建普通日程 ↗</a></p>';
 }
 
 const stopFigma = {
@@ -82,7 +82,7 @@ function stopCalendar(state) {
 
 const scenes=[
  ['3:8','02-01 新建 · 空表单（现有演示）',()=>form().replace('相识纪念日','<span class="placeholder">请输入事项名称</span>')],
- ['review:normal','02-01 新建 · 普通日程（设计预览）',normalSchedulePreview,'down'],
+ ['review:normal','02-01 新建 · 普通日程',normalSchedulePreview,'down'],
  ['3:9','02-02 新建 · 正计时',()=>form()],
  ['3:10','02-03 新建 · 倒数日',()=>form('down'),'down'],
  ['3:11','02-04 新建 · 生日与历法',()=>form('birthday'),'birthday'],
@@ -184,7 +184,7 @@ $('review-phone').addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' 
 function auditPage(){
  const id=$('screen').value;
  const anchors=[...new Set([...$('review-phone').querySelectorAll('[data-anchor]')].map(n=>n.dataset.anchor))];
- const chapterOK=n=>state.documents.has(n.doc)&&chapters(state.documents.get(n.doc)).some(c=>c.title===n.chapter);
+ const chapterOK=n=>state.documents.has(n.doc)&&chapters(state.documents.get(n.doc)).some(c=>matchesChapter(n,c));
  const relevant=reviewNotes.filter(n=>(n.screens?n.screens.includes(id):n.screen?n.screen===id:!!anchorElement(n)));
  const matched=anchors.filter(a=>relevant.some(n=>n.anchor===a&&chapterOK(n)));
  return {page:$('screen').selectedOptions[0].textContent,total:anchors.length,matched:matched.length,missing:anchors.filter(a=>!matched.includes(a)),broken:relevant.filter(n=>!chapterOK(n)),absent:relevant.filter(n=>!anchorElement(n)),percent:anchors.length?Math.round(matched.length/anchors.length*100):null};
@@ -200,12 +200,10 @@ function updateAuditPanel(){
  for(const [kind,text]of issues){const item=document.createElement('div');item.className='audit-issue';const h=document.createElement('strong');h.textContent=kind;const p=document.createElement('p');p.textContent=text;item.append(h,p);panel.append(item)}
  const button=document.createElement('button');button.textContent='复制本页校验结果';button.onclick=()=>copy(auditText());panel.append(button);$('content').prepend(panel);
 }
-let pendingLinkNote=new URLSearchParams(location.search).get('note');
 const previousRender=render;
-render=function(){previousRender();updateAuditPanel();if(pendingLinkNote&&state.documents.size===5&&reviewNotes.some(n=>n.id===pendingLinkNote)){const id=pendingLinkNote;pendingLinkNote=null;requestAnimationFrame(()=>selectNote(id))}};
+render=function(){previousRender();updateAuditPanel()};
 const previousRaw=rawForActive;
 rawForActive=function(){return previousRaw()+(state.active==='checks'?'\n\n## 当前页面校验\n\n'+auditText():'')};
 reviewCaption.textContent='V0.4 页面快照用于标注，使用预设数据；切换Figma演示体验原文件跳转。';
-const deepLink=new URLSearchParams(location.search).get('screen');if(deepLink&&[...$('screen').options].some(o=>o.value===deepLink))$('screen').value=deepLink;
 setPrototype($('screen').value);renderPhone();render();
 })();

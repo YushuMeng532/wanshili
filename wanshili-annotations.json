@@ -21,7 +21,8 @@
         "review:fail"
       ],
       "kind": "改动",
-      "status": "V0.5 已确认规则"
+      "status": "规则已确认",
+      "chapterId": "create"
     },
     {
       "id": "flow-name",
@@ -43,7 +44,8 @@
         "review:fail"
       ],
       "kind": "改动",
-      "status": "V0.5 已确认规则"
+      "status": "规则已确认",
+      "chapterId": "create"
     },
     {
       "id": "flow-date",
@@ -66,13 +68,14 @@
         "137:3067"
       ],
       "kind": "改动",
-      "status": "V0.5 已确认规则"
+      "status": "规则已确认",
+      "chapterId": "create"
     },
     {
       "id": "flow-repeat",
       "anchor": "event-repeat",
       "title": "循环规则与子层",
-      "text": "循环用于倒数日；每月不足改月末，2月29日跳过；调休日历未接入。持续次数按有效计划出现次数计算，仅一次固定为1。",
+      "text": "倒数日和普通日程均可设置循环。每月不足改月末，2月29日跳过；调休日历未接入。持续次数按有效计划出现次数计算，仅一次固定为1。",
       "doc": "prd",
       "chapter": "3. 新建与循环",
       "screen": "3:12",
@@ -87,7 +90,8 @@
         "review:count"
       ],
       "kind": "改动",
-      "status": "V0.5 已确认规则"
+      "status": "规则已确认",
+      "chapterId": "create"
     },
     {
       "id": "flow-duration",
@@ -101,7 +105,8 @@
         "3:13"
       ],
       "kind": "改动",
-      "status": "V0.5 已确认规则"
+      "status": "规则已确认",
+      "chapterId": "create"
     },
     {
       "id": "flow-ai",
@@ -123,7 +128,8 @@
         "review:fail"
       ],
       "kind": "改动",
-      "status": "V0.5 已确认规则"
+      "status": "规则已确认",
+      "chapterId": "local-data"
     },
     {
       "id": "flow-save",
@@ -144,7 +150,8 @@
         "137:4025"
       ],
       "kind": "改动",
-      "status": "V0.5 已确认规则"
+      "status": "规则已确认",
+      "chapterId": "save"
     },
     {
       "id": "flow-item",
@@ -160,7 +167,8 @@
         "144:7580"
       ],
       "kind": "改动",
-      "status": "V0.5 已确认规则"
+      "status": "规则已确认",
+      "chapterId": "edit-delete"
     },
     {
       "id": "flow-edit",
@@ -174,7 +182,8 @@
         "3:15"
       ],
       "kind": "改动",
-      "status": "V0.5 已确认规则"
+      "status": "规则已确认",
+      "chapterId": "edit-delete"
     },
     {
       "id": "flow-delete",
@@ -189,7 +198,8 @@
         "3:18"
       ],
       "kind": "改动",
-      "status": "V0.5 已确认规则"
+      "status": "规则已确认",
+      "chapterId": "edit-delete"
     },
     {
       "id": "flow-discard",
@@ -215,7 +225,8 @@
         "137:3616"
       ],
       "kind": "改动",
-      "status": "V0.5 已确认规则"
+      "status": "规则已确认",
+      "chapterId": "edit-delete"
     },
     {
       "id": "flow-error",
@@ -229,7 +240,8 @@
         "137:3529"
       ],
       "kind": "改动",
-      "status": "V0.5 已确认规则"
+      "status": "规则已确认",
+      "chapterId": "draft"
     },
     {
       "id": "flow-scope",
@@ -243,7 +255,8 @@
         "3:17"
       ],
       "kind": "改动",
-      "status": "V0.5 已确认规则"
+      "status": "规则已确认",
+      "chapterId": "edit-delete"
     },
     {
       "id": "flow-retry",
@@ -257,7 +270,8 @@
         "review:fail"
       ],
       "kind": "改动",
-      "status": "V0.5 已确认规则"
+      "status": "规则已确认",
+      "chapterId": "save-retry"
     },
     {
       "id": "flow-conflict",
@@ -271,63 +285,128 @@
         "review:conflict"
       ],
       "kind": "改动",
-      "status": "V0.5 已确认规则"
+      "status": "规则已确认",
+      "chapterId": "save"
     },
     {
       "id": "normal-schedule-preview",
       "anchor": "normal-schedule",
       "doc": "prd",
       "chapter": "3. 新建与循环",
-      "title": "新增「普通日程」按钮",
+      "title": "「普通日程」入口",
       "text": "普通日程带入月历选中日期，默认仅一次，也可选择循环。日历和当天列表只在计划发生的日期显示该日程。",
       "kind": "新增",
-      "status": "设计预览 · 待实现",
-      "screen": "review:normal"
+      "status": "试用版可操作",
+      "screen": "review:normal",
+      "chapterId": "create"
     },
     {
-      "id": "stop-countup-entry", "anchor": "stop-entry", "doc": "prd", "chapter": "4. 详情、编辑与删除",
-      "title": "打开今天正在进行的正计时", "text": "从今天的事项列表打开进行中的正计时，详情页提供「结束正计时」。",
-      "kind": "新增", "status": "原型已连接", "screen": "review:stop-today"
+      "id": "stop-countup-entry",
+      "anchor": "stop-entry",
+      "doc": "prd",
+      "chapter": "4. 详情、编辑与删除",
+      "title": "打开今天正在进行的正计时",
+      "text": "从今天的事项列表打开进行中的正计时，详情页提供「结束正计时」。",
+      "kind": "新增",
+      "status": "原型已连接",
+      "screen": "review:stop-today",
+      "chapterId": "edit-delete"
     },
     {
-      "id": "stop-countup-action", "anchor": "stop-action", "doc": "prd", "chapter": "4. 详情、编辑与删除",
-      "title": "结束正计时入口", "text": "结束是独立操作，打开确认层后再决定是否结束，无需选择编辑或删除范围。",
-      "kind": "新增", "status": "原型已连接", "screen": "review:stop-active"
+      "id": "stop-countup-action",
+      "anchor": "stop-action",
+      "doc": "prd",
+      "chapter": "4. 详情、编辑与删除",
+      "title": "结束正计时入口",
+      "text": "结束是独立操作，打开确认层后再决定是否结束，无需选择编辑或删除范围。",
+      "kind": "新增",
+      "status": "原型已连接",
+      "screen": "review:stop-active",
+      "chapterId": "edit-delete"
     },
     {
-      "id": "stop-countup-confirm", "anchor": "stop-confirm", "doc": "prd", "chapter": "4. 详情、编辑与删除",
-      "title": "确认结束并保留历史", "text": "确认后将今天记为结束日，结束当天计入天数。取消或关闭会继续计时。",
-      "kind": "新增", "status": "原型已连接", "screen": "review:stop-confirm"
+      "id": "stop-countup-confirm",
+      "anchor": "stop-confirm",
+      "doc": "prd",
+      "chapter": "4. 详情、编辑与删除",
+      "title": "确认结束并保留历史",
+      "text": "确认后将今天记为结束日，结束当天计入天数。取消或关闭会继续计时。",
+      "kind": "新增",
+      "status": "原型已连接",
+      "screen": "review:stop-confirm",
+      "chapterId": "edit-delete"
     },
     {
-      "id": "stop-countup-total", "anchor": "stop-total", "doc": "prd", "chapter": "4. 详情、编辑与删除",
-      "title": "展示最终累计天数", "text": "11 月 17 日开始、11 月 23 日结束，含起止日共 7 天。详情保留起止日期。",
-      "kind": "新增", "status": "原型已连接", "screen": "review:stop-ended"
+      "id": "stop-countup-total",
+      "anchor": "stop-total",
+      "doc": "prd",
+      "chapter": "4. 详情、编辑与删除",
+      "title": "展示最终累计天数",
+      "text": "11 月 17 日开始、11 月 23 日结束，含起止日共 7 天。详情保留起止日期。",
+      "kind": "新增",
+      "status": "原型已连接",
+      "screen": "review:stop-ended",
+      "chapterId": "edit-delete"
     },
     {
-      "id": "stop-countup-marker", "anchor": "stop-end-date", "doc": "prd", "chapter": "2. 月历与当天事项",
-      "title": "月历标记结束日期", "text": "结束后月历标记开始日和结束日。起止为同一天时只标一次。",
-      "kind": "新增", "status": "原型已连接", "screen": "review:stop-end-day"
+      "id": "stop-countup-marker",
+      "anchor": "stop-end-date",
+      "doc": "prd",
+      "chapter": "2. 月历与当天事项",
+      "title": "月历标记结束日期",
+      "text": "结束后月历标记开始日和结束日。起止为同一天时只标一次。",
+      "kind": "新增",
+      "status": "原型已连接",
+      "screen": "review:stop-end-day",
+      "chapterId": "calendar"
     },
     {
-      "id": "stop-countup-result", "anchor": "stop-result", "doc": "prd", "chapter": "2. 月历与当天事项",
-      "title": "结束当天的事项记录", "text": "选中结束日，下方仍可查看该事项，状态显示为「已结束 · 共 7 天」。",
-      "kind": "新增", "status": "原型已连接", "screen": "review:stop-end-day"
+      "id": "stop-countup-result",
+      "anchor": "stop-result",
+      "doc": "prd",
+      "chapter": "2. 月历与当天事项",
+      "title": "结束当天的事项记录",
+      "text": "选中结束日，下方仍可查看该事项，状态显示为「已结束 · 共 7 天」。",
+      "kind": "新增",
+      "status": "原型已连接",
+      "screen": "review:stop-end-day",
+      "chapterId": "calendar"
     },
     {
-      "id": "stop-countup-next-date", "anchor": "stop-next-date", "doc": "prd", "chapter": "2. 月历与当天事项",
-      "title": "从结束日切换到次日", "text": "结束日之后不再累计，也不在次日事项列表中显示。",
-      "kind": "新增", "status": "原型已连接", "screen": "review:stop-end-day"
+      "id": "stop-countup-next-date",
+      "anchor": "stop-next-date",
+      "doc": "prd",
+      "chapter": "2. 月历与当天事项",
+      "title": "从结束日切换到次日",
+      "text": "结束日之后不再累计，也不在次日事项列表中显示。",
+      "kind": "新增",
+      "status": "原型已连接",
+      "screen": "review:stop-end-day",
+      "chapterId": "calendar"
     },
     {
-      "id": "stop-countup-next", "anchor": "stop-empty", "doc": "prd", "chapter": "5. 统计",
-      "title": "结束次日与统计", "text": "次日列表不再展示这条正计时，结束日此时计入月度统计，过去记录继续保留。",
-      "kind": "新增", "status": "原型已连接", "screen": "review:stop-next-day"
+      "id": "stop-countup-next",
+      "anchor": "stop-empty",
+      "doc": "prd",
+      "chapter": "5. 统计",
+      "title": "结束次日与统计",
+      "text": "次日列表不再展示这条正计时，结束日此时计入月度统计，过去记录继续保留。",
+      "kind": "新增",
+      "status": "原型已连接",
+      "screen": "review:stop-next-day",
+      "chapterId": "statistics"
     },
     {
-      "id": "stop-countup-history", "anchor": "stop-history-day", "doc": "prd", "chapter": "4. 详情、编辑与删除",
-      "title": "回看中间日期的累计天数", "text": "11 月 17 日开始、23 日结束后，回看 11 月 20 日显示「正计时 · 第 4 天」。月历小圆点仍只标记开始日和结束日。",
-      "kind": "新增", "status": "原型已连接", "screen": "review:stop-history"
+      "id": "stop-countup-history",
+      "anchor": "stop-history-day",
+      "doc": "prd",
+      "chapter": "4. 详情、编辑与删除",
+      "title": "回看中间日期的累计天数",
+      "text": "11 月 17 日开始、23 日结束后，回看 11 月 20 日显示「正计时 · 第 4 天」。月历小圆点仍只标记开始日和结束日。",
+      "kind": "新增",
+      "status": "原型已连接",
+      "screen": "review:stop-history",
+      "chapterId": "edit-delete"
     },
     {
       "id": "v06-voice-1",
@@ -338,7 +417,8 @@
       "text": "点击底部中央的「＋」，选择手动创建或 AI 语音。",
       "kind": "新增",
       "status": "V0.6 原型示例",
-      "screen": "v06:voice"
+      "screen": "v06:voice",
+      "chapterId": "voice"
     },
     {
       "id": "v06-chooser-2",
@@ -349,7 +429,8 @@
       "text": "选 AI 语音进入录音说明，手动创建继续使用现有表单。",
       "kind": "新增",
       "status": "V0.6 原型示例",
-      "screen": "v06:chooser"
+      "screen": "v06:chooser",
+      "chapterId": "voice"
     },
     {
       "id": "v06-permission-3",
@@ -360,7 +441,8 @@
       "text": "点击开始录音时才请求权限；拒绝时可以重试或改用文字。",
       "kind": "新增",
       "status": "V0.6 原型示例",
-      "screen": "v06:permission"
+      "screen": "v06:permission",
+      "chapterId": "voice"
     },
     {
       "id": "v06-recording-4",
@@ -371,7 +453,8 @@
       "text": "点完成提交这段录音用于中文转写，点取消时退出。",
       "kind": "新增",
       "status": "V0.6 原型示例",
-      "screen": "v06:recording"
+      "screen": "v06:recording",
+      "chapterId": "voice"
     },
     {
       "id": "v06-transcript-5",
@@ -382,7 +465,8 @@
       "text": "用户可修改转写或重录。点击解析后才发送确认过的文字、设备日期和时区。",
       "kind": "新增",
       "status": "V0.6 原型示例",
-      "screen": "v06:transcript"
+      "screen": "v06:transcript",
+      "chapterId": "voice"
     },
     {
       "id": "v06-draft-6",
@@ -393,7 +477,8 @@
       "text": "AI 填草稿并显示绝对日期；确认保存才写入日程。",
       "kind": "新增",
       "status": "V0.6 原型示例",
-      "screen": "v06:draft"
+      "screen": "v06:draft",
+      "chapterId": "voice"
     },
     {
       "id": "v06-denied-7",
@@ -404,7 +489,8 @@
       "text": "麦克风不可用时，提供重试与文字输入。",
       "kind": "新增",
       "status": "V0.6 原型示例",
-      "screen": "v06:denied"
+      "screen": "v06:denied",
+      "chapterId": "voice"
     },
     {
       "id": "v06-voiceerror-8",
@@ -415,7 +501,8 @@
       "text": "转写失败时提供重录，也可以改用文字。",
       "kind": "新增",
       "status": "V0.6 原型示例",
-      "screen": "v06:voiceError"
+      "screen": "v06:voiceError",
+      "chapterId": "voice"
     },
     {
       "id": "v06-matches-9",
@@ -426,7 +513,8 @@
       "text": "显示同名事项的日期和循环信息，由用户选定目标。",
       "kind": "新增",
       "status": "V0.6 原型示例",
-      "screen": "v06:matches"
+      "screen": "v06:matches",
+      "chapterId": "voice"
     },
     {
       "id": "v06-move-10",
@@ -437,7 +525,8 @@
       "text": "改期展示原日期和新日期，重复事项沿用原有作用范围。",
       "kind": "新增",
       "status": "V0.6 原型示例",
-      "screen": "v06:move"
+      "screen": "v06:move",
+      "chapterId": "voice"
     },
     {
       "id": "v06-profile-11",
@@ -448,7 +537,8 @@
       "text": "在「我的」进入统计，查看指定日期范围内的日程天数。",
       "kind": "新增",
       "status": "V0.6 原型示例",
-      "screen": "v06:profile"
+      "screen": "v06:profile",
+      "chapterId": "statistics"
     },
     {
       "id": "v06-month-category-12",
@@ -459,7 +549,8 @@
       "text": "本周按周一至周日取范围，只计入早于今天的有效计划。",
       "kind": "新增",
       "status": "V0.6 原型示例",
-      "screen": "v06:month_category"
+      "screen": "v06:month_category",
+      "chapterId": "statistics"
     },
     {
       "id": "v06-month-category-13",
@@ -470,7 +561,8 @@
       "text": "选择开始日和结束日，确认后更新；取消保留原范围。",
       "kind": "新增",
       "status": "V0.6 原型示例",
-      "screen": "v06:month_category"
+      "screen": "v06:month_category",
+      "chapterId": "statistics"
     },
     {
       "id": "v06-picker-month-category-2-14",
@@ -481,7 +573,8 @@
       "text": "起止日期均包含。应用范围时保留当前查看方式。",
       "kind": "新增",
       "status": "V0.6 原型示例",
-      "screen": "v06:picker_month_category_2"
+      "screen": "v06:picker_month_category_2",
+      "chapterId": "statistics"
     },
     {
       "id": "v06-month-category-15",
@@ -492,7 +585,8 @@
       "text": "类别天数按该类别的计划日期去重。点入可查看该类别的具体事项。",
       "kind": "新增",
       "status": "V0.6 原型示例",
-      "screen": "v06:month_category"
+      "screen": "v06:month_category",
+      "chapterId": "statistics"
     },
     {
       "id": "v06-custom-category-16",
@@ -503,7 +597,8 @@
       "text": "从按类别切到按日程时，保留已选日期范围。",
       "kind": "新增",
       "status": "V0.6 原型示例",
-      "screen": "v06:custom_category"
+      "screen": "v06:custom_category",
+      "chapterId": "statistics"
     },
     {
       "id": "v06-custom-schedule-17",
@@ -514,7 +609,8 @@
       "text": "独立创建的同名日程单独列出；同一系列的同一天计一次。",
       "kind": "新增",
       "status": "V0.6 原型示例",
-      "screen": "v06:custom_schedule"
+      "screen": "v06:custom_schedule",
+      "chapterId": "statistics"
     },
     {
       "id": "v06-custom-scheduledetail-0-18",
@@ -525,7 +621,8 @@
       "text": "4 月 8 日至 19 日中，4 月 8 日、13 日、15 日计入，共 3 天。",
       "kind": "新增",
       "status": "V0.6 原型示例",
-      "screen": "v06:custom_scheduleDetail_0"
+      "screen": "v06:custom_scheduleDetail_0",
+      "chapterId": "statistics"
     },
     {
       "id": "v06-profile-19",
@@ -536,7 +633,8 @@
       "text": "全局分析和单项授权默认关闭，关闭全局时保留单项选择。",
       "kind": "新增",
       "status": "V0.6 原型示例",
-      "screen": "v06:profile"
+      "screen": "v06:profile",
+      "chapterId": "habit"
     },
     {
       "id": "v06-profile-20",
@@ -547,7 +645,8 @@
       "text": "开启习惯分析后默认打开月末提醒，按每月最后一天触发。",
       "kind": "新增",
       "status": "V0.6 原型示例",
-      "screen": "v06:profile"
+      "screen": "v06:profile",
+      "chapterId": "habit"
     },
     {
       "id": "v06-monthstart-21",
@@ -558,7 +657,8 @@
       "text": "月末自动提醒同月只出现一次。稍后仍可从统计页进入。",
       "kind": "新增",
       "status": "V0.6 原型示例",
-      "screen": "v06:monthStart"
+      "screen": "v06:monthStart",
+      "chapterId": "habit"
     },
     {
       "id": "v06-review-22",
@@ -569,7 +669,8 @@
       "text": "只有点击生成时才发送已授权日程的分类天数、总天数与区间。",
       "kind": "新增",
       "status": "V0.6 原型示例",
-      "screen": "v06:review"
+      "screen": "v06:review",
+      "chapterId": "habit"
     },
     {
       "id": "v06-result-23",
@@ -580,7 +681,8 @@
       "text": "统计数字由万事历计算，AI 将数据整理成文字。",
       "kind": "新增",
       "status": "V0.6 原型示例",
-      "screen": "v06:result"
+      "screen": "v06:result",
+      "chapterId": "habit"
     },
     {
       "id": "v06-reviewfail-24",
@@ -591,7 +693,8 @@
       "text": "失败保留统计，用户可重试。",
       "kind": "新增",
       "status": "V0.6 原型示例",
-      "screen": "v06:reviewFail"
+      "screen": "v06:reviewFail",
+      "chapterId": "habit"
     },
     {
       "id": "v06-profile-25",
@@ -602,7 +705,8 @@
       "text": "从「我的」进入邮箱登录、注册和找回密码。",
       "kind": "新增",
       "status": "V0.6 原型示例",
-      "screen": "v06:profile"
+      "screen": "v06:profile",
+      "chapterId": "account"
     },
     {
       "id": "v06-login-26",
@@ -613,7 +717,8 @@
       "text": "后端从登录会话确定账号，登录后读取该账号的日程、偏好和统计。",
       "kind": "新增",
       "status": "V0.6 原型示例",
-      "screen": "v06:login"
+      "screen": "v06:login",
+      "chapterId": "account"
     },
     {
       "id": "v06-signup-27",
@@ -624,7 +729,8 @@
       "text": "邮箱保持唯一。验证完成后创建固定账号 ID。",
       "kind": "新增",
       "status": "V0.6 原型示例",
-      "screen": "v06:signup"
+      "screen": "v06:signup",
+      "chapterId": "account"
     },
     {
       "id": "v06-verify-28",
@@ -635,7 +741,8 @@
       "text": "验证链接过期可重发，验证成功后进入账号日历。",
       "kind": "新增",
       "status": "V0.6 原型示例",
-      "screen": "v06:verify"
+      "screen": "v06:verify",
+      "chapterId": "account"
     },
     {
       "id": "v06-reset-29",
@@ -646,7 +753,8 @@
       "text": "用注册邮箱发起密码重置。",
       "kind": "新增",
       "status": "V0.6 原型示例",
-      "screen": "v06:reset"
+      "screen": "v06:reset",
+      "chapterId": "account"
     },
     {
       "id": "v06-logout-30",
@@ -657,7 +765,8 @@
       "text": "退出后清除该账号的本地页面和缓存，云端记录保留。",
       "kind": "新增",
       "status": "V0.6 原型示例",
-      "screen": "v06:logout"
+      "screen": "v06:logout",
+      "chapterId": "account"
     },
     {
       "id": "v06-cloudcalendar-31",
@@ -668,7 +777,8 @@
       "text": "手机页面调用万事历 API，后端从 MySQL 读取当前账号的数据。",
       "kind": "新增",
       "status": "V0.6 原型示例",
-      "screen": "v06:cloudCalendar"
+      "screen": "v06:cloudCalendar",
+      "chapterId": "cloud-data"
     },
     {
       "id": "v06-cloudstats-32",
@@ -679,7 +789,8 @@
       "text": "新云端账号从空日历开始。原浏览器的试用记录留在本机。",
       "kind": "新增",
       "status": "V0.6 原型示例",
-      "screen": "v06:cloudStats"
+      "screen": "v06:cloudStats",
+      "chapterId": "cloud-data"
     },
     {
       "id": "v06-sync-33",
@@ -690,7 +801,8 @@
       "text": "同一账号在另一台设备可读取已保存的日程，账号之间数据独立。",
       "kind": "新增",
       "status": "V0.6 原型示例",
-      "screen": "v06:sync"
+      "screen": "v06:sync",
+      "chapterId": "cloud-data"
     },
     {
       "id": "v06-syncerror-34",
@@ -701,7 +813,8 @@
       "text": "以数据库确认写入为准。失败时保留草稿，可以重试。",
       "kind": "新增",
       "status": "V0.6 原型示例",
-      "screen": "v06:syncError"
+      "screen": "v06:syncError",
+      "chapterId": "cloud-data"
     },
     {
       "id": "v06-conflict-35",
@@ -712,7 +825,8 @@
       "text": "旧版本提交遇到冲突时保留草稿，核对云端最新记录后再保存。",
       "kind": "新增",
       "status": "V0.6 原型示例",
-      "screen": "v06:conflict"
+      "screen": "v06:conflict",
+      "chapterId": "cloud-data"
     }
   ]
 }
