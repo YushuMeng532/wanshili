@@ -1,5 +1,5 @@
 # 万事历 原型与流程
-版本：V0.5 · 更新：2026-11-19
+版本 V0.6 · 更新日期 2026-11-24
 
 [产品前端](https://yushumeng532.github.io/wanshili/app.html) · [工作台](https://yushumeng532.github.io/wanshili/) · [Figma演示](https://www.figma.com/proto/8aE2Z9hUhKtxgXjnEuCY7I?node-id=3-4&page-id=2%3A2&starting-point-node-id=3%3A4&scaling=scale-down&content-scaling=fixed&show-proto-sidebar=1)
 
@@ -37,3 +37,14 @@
 工作台网页演示可填写表单并完成创建、详情、编辑与删除；数据仅在本次页面保留。标注模式通过原型锚点和文档章节相互定位。Figma保留可编辑图层、原型连线和已有动效；使用固定示例说明规则。
 
 所有画框按390 × 844等比显示。正计时取消循环和次数；详情取消人工发生按钮；类型锁定、历史保留、月末回退、闰日跳过与AI未接入均有说明。运行时日期计算、保存、跨标签页保护与统计在独立产品前端中验证。
+
+## 4. V0.6 交互原型
+
+工作台的「原型入口」按流程收录 V0.6 画框。选择「网页演示」可以点击控件体验跳转，选择「标注」可在控件和 PRD 规则之间双向定位。V0.6 的录音、总结、登录和云同步使用预设示例。
+
+| 流程 | 工作台入口 | Figma 原型 | 产品规则 |
+| --- | --- | --- | --- |
+| AI 语音 | [加号 → AI 语音](https://yushumeng532.github.io/wanshili/?screen=v06%3Avoice#prd) | [语音](https://www.figma.com/proto/8aE2Z9hUhKtxgXjnEuCY7I?node-id=230-850&page-id=230%3A847&starting-point-node-id=230%3A850) | [AI 语音创建和管理日程](./prd.md#7-ai-语音创建和管理日程p0) |
+| 统计 | [选择范围和日程明细](https://yushumeng532.github.io/wanshili/?screen=v06%3Amonth_category#prd) | [统计](https://www.figma.com/proto/8aE2Z9hUhKtxgXjnEuCY7I?node-id=230-2255&page-id=230%3A847&starting-point-node-id=230%3A2255) | [统计](./prd.md#5-统计) |
+| 习惯回顾 | [月末提醒 → 查看回顾](https://yushumeng532.github.io/wanshili/?screen=v06%3AmonthStart#prd) | [习惯回顾](https://www.figma.com/proto/8aE2Z9hUhKtxgXjnEuCY7I?node-id=230-1997&page-id=230%3A847&starting-point-node-id=230%3A1997) | [月末习惯回顾](./prd.md#8-月末习惯回顾p0) |
+| 账号及云同步 | [登录、注册与同步](https://yushumeng532.github.io/wanshili/?screen=v06%3Alogin#prd) | [账号](https://www.figma.com/proto/8aE2Z9hUhKtxgXjnEuCY7I?node-id=235-6831&page-id=230%3A847&starting-point-node-id=235%3A6831) | [注册与登录](./prd.md#9-注册登录与账号归属p1) · [MySQL 保存](./prd.md#10-mysql-保存与版本兼容p1) |

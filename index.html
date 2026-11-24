@@ -17,7 +17,7 @@
 <a class="skip" href="#document">跳至文档</a>
 <header class="topbar">
  <div class="brand"><svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="5" y="7" width="22" height="21" rx="6"/><path d="M5 14h22M11 4v6m10-6v6"/><path d="M11 20h4" stroke="#8f6a76"/><circle cx="22" cy="23" r="2" fill="#aab18d" stroke="none"/></svg><div><h1>万事历 <span style="font-weight:400">· 产品工作台</span></h1><div class="sub">让原型、需求与开发约定保持同步</div></div></div>
- <div class="actions"><a href="app.html">产品前端演示</a><span class="badge">V0.5 · 原型评审</span><a id="history" target="_blank" rel="noopener">修改记录 ↗</a><a id="repository" target="_blank" rel="noopener">GitHub 仓库 ↗</a></div>
+ <div class="actions"><a href="app.html">产品前端演示</a><span class="badge">V0.6 · 原型评审</span><a id="history" target="_blank" rel="noopener">修改记录 ↗</a><a id="repository" target="_blank" rel="noopener">GitHub 仓库 ↗</a></div>
 </header>
 <main class="workspace">
  <section class="prototype" aria-labelledby="proto-title">
@@ -29,7 +29,7 @@
  <section class="documentation" aria-label="产品配套文档">
   <div class="tabs" role="tablist" aria-label="文档类型"><button role="tab" id="tab-prd" data-doc="prd" aria-controls="document" aria-selected="true">业务 PRD</button><button role="tab" id="tab-dev-spec" data-doc="dev-spec" aria-controls="document" aria-selected="false" tabindex="-1">Dev Spec</button><button role="tab" id="tab-page-design" data-doc="page-design" aria-controls="document" aria-selected="false" tabindex="-1">页面设计</button><button role="tab" id="tab-validation" data-doc="validation" aria-controls="document" aria-selected="false" tabindex="-1">验证</button><button role="tab" id="tab-checks" data-doc="checks" aria-controls="document" aria-selected="false" tabindex="-1">校验</button><button role="tab" id="tab-all" data-doc="all" aria-controls="document" aria-selected="false" tabindex="-1">统一阅读</button></div>
   <div class="doc-toolbar"><span id="source-status" role="status">准备读取仓库文档…</span><div class="actions"><button id="copy-all">复制当前文档</button><a id="edit" class="source-link" target="_blank" rel="noopener">在 GitHub 编辑 ↗</a></div></div>
-  <div class="doc-scroll" id="document" role="tabpanel" aria-labelledby="tab-prd" tabindex="0"><div class="intro"><span class="pill">Issue 01–03 · 月历与事项流程</span><span class="small">与当前部署版本保持一致</span></div><div id="content" class="markdown" aria-busy="true"></div></div>
+  <div class="doc-scroll" id="document" role="tabpanel" aria-labelledby="tab-prd" tabindex="0"><div class="intro"><span class="pill">V0.6 · 产品规则与原型</span><span class="small">与当前部署版本保持一致</span></div><div id="content" class="markdown" aria-busy="true"></div></div>
  </section>
 </main>
 <div id="toast" class="toast hidden" role="status"></div>
@@ -78,14 +78,14 @@ const BASE_NOTES=[
 const sharedNoteIds=new Set();
 let reviewNotes=BASE_NOTES.slice(),activeNote='cal-add',reviewMode=true,reviewScale='fit',reviewEditing=false,reviewInitialized=false;
 try{const cached=JSON.parse(localStorage.getItem('wanshili-review-notes-v02')||'[]');if(Array.isArray(cached))reviewNotes.push(...cached.filter(validNote))}catch{}
-function validNote(n){return n&&typeof n.id==='string'&&["add", "date", "empty", "event-type", "normal-schedule", "event-name", "event-date", "event-repeat", "event-duration", "event-ai", "event-save", "event-item", "event-edit", "event-delete", "event-discard", "event-error", "event-scope", "event-retry", "stop-entry", "stop-action", "stop-confirm", "stop-total", "stop-end-date", "stop-next-date", "stop-result", "stop-empty", "stop-history-day"].includes(n.anchor)&&DOCS.some(x=>x[0]===n.doc)&&['chapter','title','text','kind','status'].every(k=>typeof n[k]==='string')&&(!('screen'in n)||typeof n.screen==='string')&&(!('screens'in n)||(Array.isArray(n.screens)&&n.screens.every(x=>typeof x==='string')))}
+function validNote(n){return n&&typeof n.id==='string'&&(/^v06-[a-z0-9-]+$/.test(n.anchor)||["add", "date", "empty", "event-type", "normal-schedule", "event-name", "event-date", "event-repeat", "event-duration", "event-ai", "event-save", "event-item", "event-edit", "event-delete", "event-discard", "event-error", "event-scope", "event-retry", "stop-entry", "stop-action", "stop-confirm", "stop-total", "stop-end-date", "stop-next-date", "stop-result", "stop-empty", "stop-history-day"].includes(n.anchor))&&DOCS.some(x=>x[0]===n.doc)&&['chapter','title','text','kind','status'].every(k=>typeof n[k]==='string')&&(!('screen'in n)||typeof n.screen==='string')&&(!('screens'in n)||(Array.isArray(n.screens)&&n.screens.every(x=>typeof x==='string')))}
 const prototypePane=document.querySelector('.prototype'),originalStage=document.querySelector('.proto-stage');
 const reviewTools=document.createElement('div');reviewTools.className='review-tools';reviewTools.innerHTML='<button id="mode-figma" aria-pressed="false">Figma 演示</button><button id="mode-review" aria-pressed="true">标注 <span id="note-count"></span></button><span class="zoom-control"><label class="review-muted" for="review-zoom">缩放</label><select id="review-zoom"><option value="fit">适应</option><option value="0.5">50%</option><option value="0.75">75%</option><option value="1">100%</option></select></span><span class="grow"></span><button id="new-note">＋ 批注</button><button id="export-notes">导出</button><button id="import-notes">导入</button><button id="collapse-docs" aria-expanded="true">收起文档</button>';
 prototypePane.insertBefore(reviewTools,originalStage);
 const reviewStage=document.createElement('div');reviewStage.className='review-stage';reviewStage.id='review-stage';reviewStage.innerHTML='<div id="review-phone" class="review-phone"></div><div id="review-points"></div><aside id="stage-note" class="stage-note"></aside>';
 prototypePane.insertBefore(reviewStage,originalStage);
 const reviewCaption=document.createElement('p');reviewCaption.className='review-caption';reviewCaption.textContent='网页原型 · 按现有设计重建，标注与文档双向定位；Figma 演示可切换查看。';prototypePane.append(reviewCaption);
-const summary=document.createElement('div');summary.className='review-summary';summary.innerHTML='<div><strong>当前页面</strong> <span id="review-page-name"></span></div><p>V0.5 页面批注 · 变更类型由作者标记</p><div class="counts"><span id="review-counts"></span><span>月历基础批注 3</span><span id="custom-count"></span></div><div class="review-mobile-tip">手机端通过编号和“定位原型”跳转，跨栏连线仅在桌面显示。</div>';
+const summary=document.createElement('div');summary.className='review-summary';summary.innerHTML='<div><strong>当前页面</strong> <span id="review-page-name"></span></div><p>原型批注 · 点击可在原型和文档间定位</p><div class="counts"><span id="review-counts"></span><span>月历基础批注 3</span><span id="custom-count"></span></div><div class="review-mobile-tip">手机端通过编号和“定位原型”跳转，跨栏连线仅在桌面显示。</div>';
 document.querySelector('.documentation').insertBefore(summary,$('document'));
 const phoneIcon='<svg viewBox="0 0 160 90" fill="none" stroke="#54758a" stroke-width="1.2"><path d="M35 28q0-8 8-8h56q8 0 8 8v44q0 8-8 8H43q-8 0-8-8zM35 34h72M48 13v16m46-16v16M87 78c20-20 27 15 60-5"/><path d="M14 62h11" stroke="#c8a0ad"/><circle cx="147" cy="73" r="2.5" fill="#aab18d" stroke="none"/></svg>';
 function phoneRows(){return '<div class="phone-row"><span style="color:#575e3d">│ ◇</span> 相识纪念日 <small>正计时 · 第1天</small></div><div class="phone-row"><span style="color:#54758a">│ ▢</span> 考试 <small>倒数日 · 还有28天</small></div><div class="phone-row"><span style="color:#8f6a76">│ ♧</span> 小林生日 <small>生日 · 11月17日</small></div>'}
@@ -117,6 +117,7 @@ loadSharedNotes();
 <script src="assets/event-rules.js?v=5"></script>
 <script src="assets/event-flow.js?v=8"></script>
 <script src="assets/web-demo.js?v=7"></script>
+<script src="assets/v06-prototype.js?v=1"></script>
 </body>
 </html>
 

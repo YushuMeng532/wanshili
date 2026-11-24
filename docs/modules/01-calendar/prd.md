@@ -104,6 +104,8 @@ V0.6 优先做 AI 语音录入、月末习惯回顾及配套统计。邮箱注�
 
 演示路径为「指定日期范围 → 4 月 8 日至 19 日 → 应用 → 按日程 → 运动」，明细显示 3 天及对应日期。[Figma 统计演示](https://www.figma.com/proto/8aE2Z9hUhKtxgXjnEuCY7I?node-id=230-2255&page-id=230%3A847&starting-point-node-id=230%3A2255&scaling=scale-down)
 
+[查看日期范围批注](https://yushumeng532.github.io/wanshili/?screen=v06%3Amonth_category&note=v06-month-category-13#prd)
+
 ## 6. 本版改动与已确认边界
 
 已确认：纪念日计时、选中日计算、月末回退、仅跳过2月29日、三个作用范围、历史保留、类型锁定、自动发生、删除人工确认按钮。
@@ -126,6 +128,8 @@ V0.6 优先做 AI 语音录入、月末习惯回顾及配套统计。邮箱注�
 
 演示用例为 11 月 23 日说「明天交报告」，确认转写后得到 11 月 24 日的普通日程草稿，保存后回到当天日历。 [Figma 语音录入演示](https://www.figma.com/proto/8aE2Z9hUhKtxgXjnEuCY7I?node-id=230-850&page-id=230%3A847&starting-point-node-id=230%3A850&scaling=scale-down)
 
+[查看 AI 语音入口批注](https://yushumeng532.github.io/wanshili/?screen=v06%3Achooser&note=v06-chooser-2#prd)
+
 ## 8. 月末习惯回顾（P0）
 
 「我的」提供统计、AI 习惯分析、月末回顾提醒、本机数据、隐私说明及账号入口。全局分析和新事项的单项授权默认关闭。全局关闭时保留单项选择。
@@ -141,6 +145,8 @@ V0.6 优先做 AI 语音录入、月末习惯回顾及配套统计。邮箱注�
 
 P0 先在受控试用中验证，日程保存在当前设备。DeepSeek 密钥由后端保管，付费调用使用试用授权和额度控制。
 
+[查看月末提醒批注](https://yushumeng532.github.io/wanshili/?screen=v06%3AmonthStart&note=v06-monthstart-21#prd)
+
 ## 9. 注册、登录与账号归属（P1）
 
 「我的」提供邮箱注册、登录、找回密码和退出。验证邮箱后创建账号，系统分配唯一且固定的账号 ID。邮箱规范化后保持唯一，并发提交同一邮箱只产生一个账号。重复注册引导登录或找回密码。验证链接过期后可重发。
@@ -148,6 +154,8 @@ P0 先在受控试用中验证，日程保存在当前设备。DeepSeek 密钥�
 登录后显示该账号的日历、统计与偏好。同一个账号换设备可以读取已同步的数据。退出或切换账号立即清除上一账号的页面数据和账号缓存，云端记录继续保留。会话过期时提示重新登录，重新登录后再核对未提交的改动。所有读写、统计和 AI 取数均依据后端会话确认的账号 ID。
 
 [Figma 注册、登录与同步演示](https://www.figma.com/proto/8aE2Z9hUhKtxgXjnEuCY7I?node-id=235-6831&page-id=230%3A847&starting-point-node-id=235%3A6831&scaling=scale-down)
+
+[查看邮箱登录批注](https://yushumeng532.github.io/wanshili/?screen=v06%3Alogin&note=v06-login-26#prd)
 
 ## 10. MySQL 保存与版本兼容（P1）
 
@@ -161,3 +169,5 @@ P0 先在受控试用中验证，日程保存在当前设备。DeepSeek 密钥�
 | 试用版旧数据 | 首个云端账号从空日历开始，本机试用记录留在原浏览器。后续加导入时由用户确认目标账号，按账号 ID 和本地日程 ID 识别重复，保留循环和历史。 |
 
 验证示例以同一测试账号登录两台设备。第一台保存「运动」后，第二台能看到该日程及其统计。另一账号查不到这条记录。两台设备先后修改同一条旧记录时，第二次保存显示冲突并保留草稿。
+
+[查看账号同步批注](https://yushumeng532.github.io/wanshili/?screen=v06%3Async&note=v06-sync-33#prd)
