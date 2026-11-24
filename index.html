@@ -33,8 +33,13 @@
 
 <style id="document-color-surfaces">
 /* Keep document identity visible in both prototype and annotation modes. */
-.documentation .tabs button[data-annotation-doc]{background:var(--doc-tint);color:var(--doc-accent);border-top:3px solid var(--doc-marker);border-bottom:3px solid transparent;margin-right:3px}
-.documentation .tabs button[data-annotation-doc][aria-selected=true]{border-bottom-color:var(--doc-accent);box-shadow:inset 0 0 0 1px var(--doc-accent)}
+.documentation .tabs{gap:0;padding:0 14px;background:transparent;border-bottom:1px solid #dce3e8}
+.documentation .tabs button[data-doc]{position:relative;flex:1 0 auto;padding:14px 12px;min-height:48px;margin:0;border:0;border-radius:0;background:transparent;color:#253640;box-shadow:none;font-weight:400}
+.documentation .tabs button[data-doc]::before{display:none}
+.documentation .tabs button[data-doc][aria-selected=true]{background:transparent;color:#747a58;box-shadow:none;border:0;font-weight:700}
+.documentation .tabs button[data-doc][aria-selected=true]::after{content:'';position:absolute;left:12px;right:12px;bottom:0;height:2px;background:#747a58}
+.documentation .tabs button[data-doc]:hover{background:transparent;color:#747a58}
+.documentation .tabs button[data-doc]:focus-visible{outline:2px solid #54758a;outline-offset:-4px}
 .chapter[data-annotation-doc]>.chapter-top{border-left:4px solid var(--doc-marker);background:var(--doc-tint);padding:4px 12px;border-radius:0 10px 10px 0;margin-bottom:14px}
 .chapter[data-annotation-doc]>.chapter-top h3{color:var(--doc-accent)}
 .chapter[data-annotation-doc]>.chapter-top .copy{color:var(--doc-accent);border-color:var(--doc-accent);background:#fff}
