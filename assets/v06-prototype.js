@@ -10,6 +10,16 @@
   };
   const direct = {'v06:voice':'230:850','v06:monthStart':'230:1997','v06:profile':'230:2180',
     'v06:month_category':'230:2255','v06:login':'235:6831'};
+  const frameExports = {
+    "v06:move": {
+      "file": "assets/ai-reschedule-recurring.png",
+      "node": "230:1910"
+    },
+    "v06:moveOnce": {
+      "file": "assets/ai-reschedule-once.png",
+      "node": "230:1937"
+    }
+  };
   const groupOf = (id, scene) => id==='v06:month_category' ? 'V0.6 · 统计与日程明细' : scene.group;
   const fallback = 'v06:profile';
   const visited = [];
@@ -113,7 +123,7 @@
       const scene = catalog[id];
       if (!scene) return previousPrototype(id);
       const start = entry[groupOf(id,scene)];
-      const params = new URLSearchParams({'node-id':direct[id]||start,'page-id':'230:847',
+      const params = new URLSearchParams({'node-id':frameExports[id]?.node||direct[id]||start,'page-id':'230:847',
         'starting-point-node-id':start,scaling:'scale-down','content-scaling':'fixed'});
       const host = 'https://www.figma.com/proto/' + CONFIG.figmaKey + '?';
       $('open-prototype').hidden = false;
@@ -135,6 +145,12 @@
       }
       const fragment = document.createDocumentFragment();
       for (const index of scene.art) fragment.append(paint(pool[index]));
+      if (frameExports[screen.value]) {
+        const preview = element('img','', {...position(0,0),width:'390px',height:'844px',pointerEvents:'none'}, {alt:''});
+        preview.onerror = () => preview.remove();
+        preview.src = frameExports[screen.value].file;
+        fragment.append(preview);
+      }
       for (const hit of scene.hits) fragment.append(hotspot(hit));
       phone.replaceChildren(fragment);
       $('review-page-name').textContent = scene.name;
