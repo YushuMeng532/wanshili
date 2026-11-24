@@ -1,0 +1,4 @@
+ai-worker/.dev.vars*
+ai-worker/.env*
+ai-worker/.wrangler/
+ai-worker/node_modules/

@@ -91,4 +91,10 @@ for(const recurrence of [
   const actual=eligible({...event,endCondition:18},'2027-04-15','2031-03-31');
   check(actual.join()===expected.join(),'限制次数与逐日筛选一致 '+JSON.stringify(recurrence));
 }
+const consent=make({type:'up',aiIncluded:true});
+R.rewrite(consent,{...consent,aiIncluded:false},'series','2026-11-23','2026-11-23');
+const consentDays=()=>R.summary([consent],R.datesInRange('2026-11-17','2026-11-23'),'2026-11-24',(_value,event)=>event.aiIncluded).total;
+check(consentDays().length===0,'撤销授权后旧分段也不计入回顾');
+consent.aiIncluded=true;
+check(consentDays().length===7,'当前授权可涵盖仍保留的历史日程');
 console.log(JSON.stringify({passed:true,checks:n}));

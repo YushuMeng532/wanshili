@@ -220,3 +220,5 @@ dialog{border:1px solid var(--line);box-shadow:0 24px 100px #26384226;padding:0;
   .stats-filters button { font-size: 13px; padding-inline: 8px; }
   .stats-result { gap: 7px; }
 }
+
+.ai-live-form textarea{display:block;width:100%;min-height:108px;margin:8px 0 12px;padding:12px;border:1px solid var(--line);border-radius:12px;font:inherit;resize:vertical}.ai-live-form [data-ai-status]:empty{display:none}

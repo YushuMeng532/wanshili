@@ -261,7 +261,7 @@ function statsRange(period,today,custom){
 function* datesInRange(start,end){
   for(let next=stamp(start),last=stamp(end);next<=last;next+=DAY)yield iso(next);
 }
-function summary(events,days,today){
+function summary(events,days,today,include=null){
   const total=new Set();
   const byType={up:new Set(),down:new Set(),birthday:new Set(),normal:new Set()};
   const byEvent=Object.fromEntries(events.map(e=>[e.id,new Set()]));
@@ -270,7 +270,7 @@ function summary(events,days,today){
     if(day>=today)continue;
     for(const event of events){
       const value=occurrenceValue(event,day);
-      if(!value)continue;
+      if(!value||(include&&!include(value,event)))continue;
       total.add(day);
       byType[value.type].add(day);
       byEvent[event.id].add(day);
