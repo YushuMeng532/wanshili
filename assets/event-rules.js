@@ -1,7 +1,7 @@
 /* V0.5 confirmed product rules, shared by the product and review prototype. */
 (function(root){'use strict';
 const DAY=86400000,clone=x=>JSON.parse(JSON.stringify(x));
-const stamp=s=>{const [y,m,d]=s.split('-').map(Number);return Date.UTC(y,m-1,d)};
+const stamp=s=>Date.parse(s+'T00:00:00Z');
 const iso=n=>new Date(n).toISOString().slice(0,10),diff=(a,b)=>Math.round((stamp(a)-stamp(b))/DAY);
 const leapDay=s=>s.slice(5)==='02-29',weekday=s=>(new Date(stamp(s)).getUTCDay()+6)%7+1;
 const config=e=>{const c=clone(e);for(const key of ['id','segments','exceptions','createdAt','updatedAt'])delete c[key];return c};
@@ -41,7 +41,45 @@ e.segments=[...past,value?{from:boundary,to:null,value:config(value)}:{from:boun
 for(const key of Object.keys(e.exceptions||{}))if(key>=boundary)delete e.exceptions[key];
 if(value)Object.assign(e,config(value));e.updatedAt=new Date().toISOString();
 }
-function summary(events,days,today){const all=new Set(),byType={up:new Set(),down:new Set(),birthday:new Set(),normal:new Set()},byEvent=Object.fromEntries(events.map(e=>[e.id,new Set()]));for(const day of days){if(day>=today)continue;for(const event of events){const value=occurrence(event,day);if(value){all.add(day);byType[value.type].add(day);byEvent[event.id].add(day)}}}return {total:[...all].sort(),byType:Object.fromEntries(Object.entries(byType).map(([k,v])=>[k,[...v].sort()])),byEvent:Object.fromEntries(Object.entries(byEvent).map(([k,v])=>[k,[...v].sort()]))}}
+const addDays=(day,amount)=>iso(stamp(day)+amount*DAY);
+const validDay=day=>/^\d{4}-\d{2}-\d{2}$/.test(day)&&day>='0001-01-01'&&Number.isFinite(stamp(day))&&iso(stamp(day))===day;
+function statsRange(period,today,custom){
+  if(period==='custom')return custom;
+  if(period==='week'){
+    const start=addDays(today,1-weekday(today));
+    return {start,end:addDays(start,6)};
+  }
+  const start=today.slice(0,7)+'-01';
+  const next=new Date(stamp(start));
+  next.setUTCMonth(next.getUTCMonth()+1);
+  return {start,end:iso(next.getTime()-DAY)};
+}
+function* datesInRange(start,end){
+  for(let next=stamp(start),last=stamp(end);next<=last;next+=DAY)yield iso(next);
+}
+function summary(events,days,today){
+  const total=new Set();
+  const byType={up:new Set(),down:new Set(),birthday:new Set(),normal:new Set()};
+  const byEvent=Object.fromEntries(events.map(e=>[e.id,new Set()]));
+  const details=Object.create(null);
+  for(const day of days){
+    if(day>=today)continue;
+    for(const event of events){
+      const value=occurrence(event,day);
+      if(!value)continue;
+      total.add(day);
+      byType[value.type].add(day);
+      byEvent[event.id].add(day);
+      const detail=details[event.id]??={last:null,types:Object.create(null)};
+      const type=detail.types[value.type]??={last:null,days:new Set()};
+      type.days.add(day);
+      if(!detail.last||detail.last.day<=day)detail.last={day,value};
+      if(!type.last||type.last.day<=day)type.last={day,value};
+    }
+  }
+  const ordered=sets=>Object.fromEntries(Object.entries(sets).map(([key,value])=>[key,[...value].sort()]));
+  return {total:[...total].sort(),byType:ordered(byType),byEvent:ordered(byEvent),details};
+}
 function normalize(e){if(e.type==='up'){e.recurrence={frequency:'none',weekdays:[]};e.endCondition=null;e.calendarType='solar'}else if(e.recurrence?.frequency==='once')e.endCondition=1;return e}
-root.WanshiliRules={stamp,iso,diff,leapDay,weekday,at,shown,marked,occurrence,label,rewrite,summary,normalize,config,countupDays,canEndCountup,endCountup};
+root.WanshiliRules={stamp,iso,diff,leapDay,weekday,at,shown,marked,occurrence,label,rewrite,summary,normalize,config,countupDays,canEndCountup,endCountup,addDays,validDay,statsRange,datesInRange};
 })(typeof window==='object'?window:globalThis);

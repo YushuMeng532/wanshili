@@ -96,3 +96,127 @@ dialog{border:1px solid var(--line);box-shadow:0 24px 100px #26384226;padding:0;
   .day-tag.normal { background: #b79843 !important; }
   .stats-metrics .metric:first-child { grid-column: 1 / -1; }
 }
+
+#header-add[hidden] { display: none; }
+.stats-layout, .profile-layout {
+  display: grid;
+  gap: 16px;
+  max-width: 720px;
+}
+.stats-range, .stats-panel, .profile-layout .settings-panel { min-width: 0; }
+.stats-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.stats-filters button {
+  min-height: 44px;
+  flex: 1 0 auto;
+  background: #fff;
+}
+.stats-filters button[aria-pressed="true"] {
+  background: var(--blue);
+  color: #fff;
+  border-color: var(--blue);
+}
+.stats-selected { font-weight: 700; margin: 14px 0 3px; }
+.stats-counted { font-size: 13px; color: var(--muted); margin: 0; }
+.stats-overview {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 18px 22px;
+  text-align: left;
+  background: var(--blue-soft);
+}
+.stats-overview strong { display: block; font-size: 14px; }
+.stats-overview b { display: block; font-size: 36px; line-height: 1.2; }
+.stats-overview small { font-size: 15px; }
+.stats-result {
+  display: grid;
+  grid-template-columns: auto minmax(0,1fr) auto auto;
+  align-items: center;
+  gap: 10px;
+  min-height: 52px;
+  width: 100%;
+  padding: 10px 0;
+  text-align: left;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
+}
+.stats-result:last-child { border-bottom: 0; }
+.stats-result .stats-name { overflow-wrap: anywhere; }
+.stats-result > svg, .profile-row > svg { width: 17px; height: 17px; color: var(--muted); }
+.stats-result b { white-space: nowrap; }
+.stats-back { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; }
+.stats-back svg { width: 17px; height: 17px; }
+.stats-panel h2 { margin: 6px 0 8px; }
+.stats-panel .stats-empty { margin: 16px 0 4px; }
+.stats-layout .date-list { grid-template-columns: repeat(auto-fit,minmax(112px,1fr)); }
+.stats-layout .date-list button { min-height: 44px; }
+.stats-date-fields { display: grid; grid-template-columns: repeat(auto-fit,minmax(160px,1fr)); gap: 12px; }
+.stats-date-fields input { width: 100%; min-width: 0; }
+.stats-date-fields label { display: block; margin-bottom: 6px; font-weight: 600; }
+#stats-range-error[hidden] { display:none; }
+.profile-row {
+  display: grid;
+  grid-template-columns: auto minmax(0,1fr) auto;
+  gap: 12px;
+  align-items: center;
+  text-align: left;
+  width: 100%;
+  min-height: 62px;
+  padding: 12px 14px;
+}
+.profile-row strong, .profile-toggle strong { display: block; }
+.profile-row small, .profile-toggle small { display: block; font-size: 13px; color: var(--muted); }
+.profile-icon {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: var(--blue-soft);
+  color: var(--blue);
+}
+.profile-icon svg { width: 20px; height: 20px; }
+.profile-layout .settings-panel { margin: 0; }
+.profile-layout .settings-panel .profile-row + .profile-row,
+.profile-preview { margin-top: 10px; }
+.profile-toggle {
+  min-height: 58px;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  border-bottom: 1px solid var(--line);
+}
+.profile-toggle input:disabled + span { opacity: .6; }
+.creation-options, .preview-options { display: grid; gap: 10px; }
+.preview-options { margin-top: 12px; }
+.preview-options button { text-align: left; }
+.preview-label { padding: 7px 10px; border-radius: 8px; background: var(--blue-soft); }
+.preview-sample { padding: 13px 16px; background: var(--blue-soft); border-radius: 12px; }
+.preview-sample p { margin: 6px 0 0; }
+@media (max-width: 980px) {
+  .mobile-nav { align-items: center; }
+  .mobile-nav button { min-height: 44px; }
+  .mobile-nav #mobile-add {
+    display: grid;
+    place-items: center;
+    background: var(--blue);
+    color: #fff;
+    width: 48px;
+    height: 48px;
+    padding: 0;
+    border-radius: 50%;
+  }
+}
+@media (max-width: 460px) {
+  .stats-panel, .profile-layout .settings-panel { padding: 16px; }
+  .stats-filters { gap: 6px; }
+  .stats-filters button { font-size: 13px; padding-inline: 8px; }
+  .stats-result { gap: 7px; }
+}
