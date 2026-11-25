@@ -21,6 +21,13 @@ function at(e,day){
   const value=resolve(e,day);
   return value ? {...config(value),id:e.id} : null;
 }
+function isWorkday(day){
+  const h=root.WanshiliHolidays;
+  if(!h)return weekday(day)<=5;
+  if(h.workOnWeekend&&h.workOnWeekend.includes(day))return true;
+  if(h.offDays&&h.offDays.includes(day))return false;
+  return weekday(day)<=5;
+}
 function matches(e,day){
   if(!e||leapDay(day)||e.calendarType==='lunar'||day<e.date)return false;
   if(e.type==='up')return !e.endDate||day<=e.endDate;
@@ -30,6 +37,7 @@ function matches(e,day){
     case 'daily': return true;
     case 'weekly': return (rule.weekdays||[]).includes(weekday(day));
     case 'weekends': return weekday(day)>=6;
+    case 'workdays': return isWorkday(day)===true;
     case 'monthly': {
       const year=Number(day.slice(0,4)),month=Number(day.slice(5,7));
       return Number(day.slice(8,10))===Math.min(rule.monthDay||Number(e.date.slice(8,10)),monthLength(year,month));
@@ -105,6 +113,14 @@ function scheduledCount(e,start,end){
     if(day>monthLength(2001,month))return 0;
     const first=Number(start.slice(0,4)),last=Number(end.slice(0,4));
     return Math.max(0,last-first+1-Number(dated(first,month,day)<start)-Number(dated(last,month,day)>end));
+  }
+  if(rule.frequency==='workdays'){
+    let count=0;
+    for(let t=stamp(start),last=stamp(end);t<=last;t+=DAY){
+      const d=iso(t);
+      if(!leapDay(d)&&isWorkday(d)===true)count++;
+    }
+    return count;
   }
   return 0;
 }
@@ -288,5 +304,5 @@ function summary(events,days,today,include=null){
   return {total:[...total].sort(),byType:ordered(byType),byEvent:ordered(byEvent),details};
 }
 function normalize(e){if(e.type==='up'){e.recurrence={frequency:'none',weekdays:[]};e.endCondition=null;e.calendarType='solar'}else if(e.recurrence?.frequency==='once')e.endCondition=1;return e}
-root.WanshiliRules={stamp,iso,diff,leapDay,weekday,at,shown,marked,occurrence,label,rewrite,summary,normalize,config,countupDays,canEndCountup,endCountup,addDays,validDay,statsRange,datesInRange,actionDate,remainingCount,standaloneCountdown};
+root.WanshiliRules={stamp,iso,diff,leapDay,weekday,isWorkday,at,shown,marked,occurrence,label,rewrite,summary,normalize,config,countupDays,canEndCountup,endCountup,addDays,validDay,statsRange,datesInRange,actionDate,remainingCount,standaloneCountdown};
 })(typeof window==='object'?window:globalThis);
