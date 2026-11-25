@@ -512,20 +512,28 @@ async function deleteSelected(scope,button){
   const id=activeEvent,day=selected,generation=detailGeneration;
   button.disabled=true;
   try{
+    let removedUp=false;
     await transaction(data=>{
       assertGeneration(data,generation);
-      const event=data.events.find(e=>e.id===id);
-      R.rewrite(event,null,scope,day,iso(new Date()));
+      const index=data.events.findIndex(e=>e.id===id);
+      if(index<0)throw Error('事项已变更，请重新打开后操作。');
+      const event=data.events[index];
+      if(event.type==='up'){
+        data.events.splice(index,1);
+        removedUp=true;
+      }else{
+        R.rewrite(event,null,scope,day,iso(new Date()));
+      }
     });
     $('sub-dialog').close();
     closeModal($('event-dialog'));
     render();
-    notify('已取消对应计划，过去日程已保留');
+    notify(removedUp?'已删除该正计时':'已取消对应计划，过去日程已保留');
   }catch(error){
     button.disabled=false;
     notify(error.message||'删除失败，原日程已保留');
   }
-}
+}}
 async function resetDemo(button){
   button.disabled=true;
   try{
