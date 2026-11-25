@@ -60,6 +60,7 @@ const exam=make({date:'2026-11-30',recurrence:{frequency:'once'}});
 check(R.actionDate(exam,'2026-11-24')==='2026-11-30','提前查看倒数时确认框指向真正的目标日');
 R.rewrite(exam,null,'one','2026-11-24','2026-11-24');
 check(!R.occurrence(exam,'2026-11-30')&&!R.shown(exam,'2026-11-24'),'提前删除单次倒数同时移除标记和预览');
+check(!R.shown(exam,'2026-11-23'),'取消未来倒数后，更早日期不再展示无目标的倒数卡片');
 const pastExam=make({date:'2026-11-22',recurrence:{frequency:'once'}});
 assert.throws(()=>R.rewrite(pastExam,null,'one','2026-11-24','2026-11-24'),/目标日已过去/);
 check(R.occurrence(pastExam,'2026-11-22'),'已经过期的目标日仍可回看');

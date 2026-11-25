@@ -153,7 +153,7 @@ function nextTarget(e,day,source){
   }
   return null;
 }
-function shown(e,day){const value=at(e,day);if(!value||leapDay(day)||value.calendarType==='lunar')return null;if(value.type==='down')return value;return occurrence(e,day)?value:null}
+function shown(e,day){const value=at(e,day);if(!value||leapDay(day)||value.calendarType==='lunar')return null;if(value.type==='down')return nextTarget(value,day,e)?value:null;return occurrence(e,day)?value:null}
 function marked(e,day){const value=occurrence(e,day);return value&&(value.type!=='up'||day===value.date||day===value.endDate)?value:null}
 const countupDays=(event,day)=>diff(day,event.date)+1;
 function canEndCountup(event,day,today){
