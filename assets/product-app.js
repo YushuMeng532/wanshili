@@ -537,7 +537,7 @@ async function deleteSelected(scope,button){
     button.disabled=false;
     notify(error.message||'删除失败，原日程已保留');
   }
-}}
+}
 async function resetDemo(button){
   button.disabled=true;
   try{
