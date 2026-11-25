@@ -132,3 +132,24 @@ test('complete deletion is available for each recurring type, even when only his
   assert.equal(R.deletionScopes(make('normal', today, { frequency: 'once' }), today, today).all, undefined);
   assert.equal(R.deletionScopes(make('up', past, { frequency: 'none' }), today, today).all, undefined);
 });
+
+test('a one-off edit inside a recurring countdown keeps the applicable series scopes', () => {
+  const event = make('down', '2026-11-23', weekly);
+  const past = '2026-11-23';
+  event.exceptions = { [past]: { override: { ...event, recurrence: { frequency: 'once' } }, forceOccurrence: true } };
+  assert.deepEqual(R.deletionScopes(event, past, today), { one: false, following: true, series: true, all: true });
+  R.rewrite(event, null, 'series', past, today);
+  assert.ok(R.marked(event, past));
+  assert.equal(R.marked(event, '2026-11-30'), null);
+  assert.deepEqual(R.deletionScopes(event, past, today), { one: false, following: false, series: false, all: true });
+});
+
+test('deleting a singly edited countdown inside a recurring series only cancels its target', () => {
+  const date = '2026-11-30';
+  const event = make('down', '2026-11-23', weekly);
+  event.exceptions = { [date]: { override: { ...event, date, recurrence: { frequency: 'once' } }, forceOccurrence: true } };
+  assert.equal(R.deletionScopes(event, date, today).one, true);
+  R.rewrite(event, null, 'one', date, today);
+  assert.equal(R.marked(event, date), null);
+  assert.ok(R.marked(event, '2026-12-07'));
+});
