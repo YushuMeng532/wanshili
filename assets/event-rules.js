@@ -228,15 +228,18 @@ function canCorrectPast(event, day, today) {
   const base = segmentValue(event, day);
   return [value, base].some(plan => plan?.type === 'normal' && plan.recurrence?.frequency && plan.recurrence.frequency !== 'once');
 }
+function hasRecurringSchedule(event, value) {
+  const recurring = plan => ['daily','weekly','monthly','yearly','workdays','weekends'].includes(plan?.recurrence?.frequency);
+  return recurring(value) || segments(event).some(segment => recurring(segment.value));
+}
 function deletionScopes(event, day, today) {
   const value = shown(event, day);
   if (value?.type === 'up') return { series: true };
   if (!value) return {};
   const target = actionDate(event, day);
   const one = Boolean(target && (target >= today || canCorrectPast(event, target, today)) && occurrenceValue(event, target));
-  const recurring = plan => plan && ['daily','weekly','monthly','yearly','workdays','weekends'].includes(plan.recurrence?.frequency);
-  const all = recurring(value) || segments(event).some(segment => recurring(segment.value));
-  if (standaloneCountdown(value)) return all ? { one, all } : { one };
+  const all = hasRecurringSchedule(event,value);
+  if (standaloneCountdown(value) && !all) return { one };
   const first = nextScheduled(event, today);
   const following = day <= today ? first : nextScheduled(event, day);
   return { one, following: Boolean(following), series: Boolean(first), ...(all ? { all } : {}) };
@@ -270,7 +273,7 @@ function remainingCount(event,value,scope,day,today){
 function rewrite(e,value,scope,day,today){
   if(!e)throw Error('事项已变更，请重新打开后操作。');
   const source=resolve(e,day);
-  if(standaloneCountdown(source)){
+  if(standaloneCountdown(source)&&(value||!hasRecurringSchedule(e,source))){
     const target=actionDate(e,day);
     if(!target||target<today)throw Error('目标日已过去，历史日程保留。');
     if(value&&value.date!==source.date&&value.date<today)throw Error('移动后的日期不能早于今天。');

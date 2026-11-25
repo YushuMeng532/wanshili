@@ -377,6 +377,8 @@ function selectScope(node){
   const warning=$('delete-all-warning');
   if(warning){
     warning.hidden=chosenScope!=='all';
+    const hint=$('delete-scope-hint');
+    if(hint)hint.hidden=true;
     const confirm=$('sub-dialog').querySelector('[data-apply-scope="delete"]');
     confirm.disabled=false;
     confirm.textContent=chosenScope==='all'?'确认删除全部':'确认删除';
@@ -414,13 +416,19 @@ function scopePicker(kind){
       '。'+(deleting?'「这次及之后」从所选日期起删除未发生的计划。「全部未发生计划」从今天起删除。':'这次及之后从选中日起生效，整个系列覆盖全部未过去计划。')+'</p>')+
       scopes.map(([value,label])=>{
         const selectedScope=value===chosenScope;
+        const disabled=!available[value];
+        const reason=deleting&&disabled?(value==='series'?'没有未发生的计划':
+          value==='following'?'这个日期及之后没有未发生的计划':'这次记录不支持单独删除'):'';
         return '<button class="option-row '+(selectedScope?'selected':'')+'" data-select-scope="'+value+
-          '" aria-pressed="'+selectedScope+'" '+(!available[value]?'disabled':'')+'>'+label+'<span class="radio"></span></button>';
+          '" aria-pressed="'+selectedScope+'" '+(disabled?'disabled':'')+'><span class="scope-option-label">'+
+          label+(reason?'<small>'+reason+'</small>':'')+'</span><span class="radio" aria-hidden="true"></span></button>';
       }).join('')+
-      (deleting?(available.all?'<p id="delete-all-warning" class="save-error" role="status" hidden>将删除该系列的全部记录，包括历史日程，相关统计会重新计算。</p>':''):'<p id="scope-count" role="status"></p>');
+      (deleting?(available.all?
+        (!chosenScope?'<p id="delete-scope-hint" class="scope-note">选择「整个系列（含历史）」后即可确认删除。</p>':'')+
+        '<p id="delete-all-warning" class="save-error" role="status" hidden>将删除该系列的全部记录，包括历史日程，相关统计会重新计算。</p>':''):'<p id="scope-count" role="status"></p>');
   sub(single?(deleting?(standalone?'删除倒数日？':'删除日程？'):'保存倒数日修改？'):(deleting?'删除哪些日程？':'将修改应用于'),description+
     '<div class="sub-actions"><button data-action="close-sub">取消</button><button class="'+(deleting?'danger':'primary')+
-    '" data-apply-scope="'+kind+'" '+(!chosenScope?'disabled':'')+'>'+(deleting?'确认删除':'确认保存')+'</button></div>');
+    '" data-apply-scope="'+kind+'" '+(!chosenScope?'disabled':'')+'>'+(deleting?(!chosenScope&&available.all?'请先选择删除范围':'确认删除'):'确认保存')+'</button></div>');
   updateScopeCount();
 }
 async function save(scope=null){
