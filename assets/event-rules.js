@@ -148,24 +148,58 @@ function occurrence(e,day){
   const value=e&&occurrenceValue(e,day);
   return value?{...config(value),id:e.id}:null;
 }
-function nextTarget(e,day,source){
-  const src=source||e;
-  const history=segments(src).filter(segment=>!segment.cancelled);
-  if(history.every(segment=>segment.value.recurrence?.frequency==='once')){
-    const dates=[...new Set([...history.map(segment=>segment.value.date),...Object.keys(src.exceptions||{})])]
-      .sort().filter(date=>occurrenceValue(src,date));
-    return dates.find(date=>date>=day)||dates.at(-1)||null;
+function nextScheduled(event, day, type) {
+  const isScheduled = date => {
+    const value = occurrenceValue(event, date);
+    return Boolean(value && (!type || value.type === type));
+  };
+  const exception = Object.keys(event.exceptions || {})
+    .filter(date => date >= day && event.exceptions[date].override)
+    .sort().find(isScheduled);
+  for (const segment of segments(event)) {
+    if (segment.cancelled || !segment.value || (type && segment.value.type !== type)) continue;
+    const value = segment.value;
+    const start = later(day, later(segment.from, value.date));
+    if ((segment.to && start >= segment.to) || (exception && start >= exception)) continue;
+    if (value.recurrence?.frequency === 'once') {
+      if (start === value.date && isScheduled(start)) return start;
+      continue;
+    }
+    const limit = budget(value);
+    const origin = value.limitFrom || value.date;
+    if (limit !== Infinity && (!limit || (start > origin && scheduledCount(value, origin, addDays(start, -1)) >= limit))) continue;
+    const last = Math.min(stamp('9999-12-31'), stamp(start) + DAY * 366 * 8,
+      segment.to ? stamp(segment.to) - DAY : Infinity, exception ? stamp(exception) - DAY : Infinity);
+    for (let n = stamp(start); n <= last; n += DAY) {
+      const date = iso(n);
+      if (isScheduled(date)) return date;
+    }
   }
-  const first=history.reduce((earliest,segment)=>earlier(earliest,segment.value.date),e.date);
-  const from=stamp(day),start=stamp(later(day,first)),minimum=stamp(earlier(day,first));
-  const last=stamp('9999-12-31');
-  for(let n=start;n<=last&&n<start+DAY*366*8;n+=DAY){
-    const date=iso(n);
-    if(occurrenceValue(src,date))return date;
+  return exception || null;
+}
+function nextTarget(e, day, source) {
+  const event = source || e;
+  const upcoming = nextScheduled(event, day, 'down');
+  if (upcoming) return upcoming;
+
+  // A cancelled tail must not fall back to a previous target and look active again.
+  const tail = segments(event).at(-1);
+  const cutoff = tail?.cancelled ? tail.from : null;
+  const removals = Object.entries(event.exceptions || {}).filter(([, exception]) => exception.cancelled && !exception.moved);
+  const lastCancelled = removals.map(([date]) => date).sort().at(-1);
+  const cancelledAfter = lastCancelled && cutoff ? later(lastCancelled, cutoff) : lastCancelled || cutoff;
+  const history = segments(event).filter(segment => !segment.cancelled && segment.value?.type === 'down');
+  if (history.every(segment => segment.value.recurrence?.frequency === 'once')) {
+    const dates = [...new Set([...history.map(segment => segment.value.date), ...Object.keys(event.exceptions || {})])];
+    return dates.sort().reverse().find(date => date < day && occurrenceValue(event, date)?.type === 'down' &&
+      (!cancelledAfter || date >= cancelledAfter || (event.exceptions?.[date]?.forceOccurrence &&
+        (!cutoff || date >= cutoff) && !removals.some(([laterDate, exception]) => laterDate > date && exception.deleted)))) || null;
   }
-  for(let n=from-DAY;n>=minimum;n-=DAY){
-    const date=iso(n);
-    if(occurrenceValue(src,date))return date;
+  const first = history.reduce((earliest, segment) => earlier(earliest, segment.value.date), e.date);
+  const minimum = stamp(cancelledAfter ? later(first, cancelledAfter) : first);
+  for (let n = stamp(day) - DAY; n >= minimum; n -= DAY) {
+    const date = iso(n);
+    if (occurrenceValue(event, date)?.type === 'down') return date;
   }
   return null;
 }
@@ -186,6 +220,17 @@ const standaloneCountdown=value=>value?.type==='down'&&value.recurrence?.frequen
 function actionDate(event,day){
   const value=resolve(event,day);
   return value?.type==='down'?nextTarget(value,day,event):day;
+}
+function deletionScopes(event, day, today) {
+  const value = shown(event, day);
+  if (value?.type === 'up') return { series: true };
+  if (!value) return {};
+  const target = actionDate(event, day);
+  const one = Boolean(target && target >= today && occurrenceValue(event, target));
+  if (standaloneCountdown(value)) return { one };
+  const first = nextScheduled(event, today);
+  const following = day <= today ? first : nextScheduled(event, day);
+  return { one, following: Boolean(following), series: Boolean(first) };
 }
 function countBefore(event,boundary){
   if(boundary<='0001-01-01')return 0;
@@ -227,11 +272,11 @@ function rewrite(e,value,scope,day,today){
   if(scope==='one'){
     if(!day||day<today)throw Error('过去的日程已发生并保留，请选择今天或未来日期。');
     e.exceptions??={};
-    if(!value)e.exceptions[day]={cancelled:true};
+    if(!value)e.exceptions[day]={cancelled:true,deleted:true};
     else if(value.date!==at(e,day)?.date){
       if(value.date<today)throw Error('移动后的日期不能早于今天。');
       if(leapDay(value.date))throw Error('2月29日不生成事项。');
-      e.exceptions[day]={cancelled:true};
+      e.exceptions[day]={cancelled:true,moved:true};
       e.exceptions[value.date]={override:config(value),forceOccurrence:true};
     }else{
       e.exceptions[day]={override:config(value),forceOccurrence:Boolean(occurrenceValue(e,day))};
@@ -304,5 +349,5 @@ function summary(events,days,today,include=null){
   return {total:[...total].sort(),byType:ordered(byType),byEvent:ordered(byEvent),details};
 }
 function normalize(e){if(e.type==='up'){e.recurrence={frequency:'none',weekdays:[]};e.endCondition=null;e.calendarType='solar'}else if(e.recurrence?.frequency==='once')e.endCondition=1;return e}
-root.WanshiliRules={stamp,iso,diff,leapDay,weekday,isWorkday,at,shown,marked,occurrence,label,rewrite,summary,normalize,config,countupDays,canEndCountup,endCountup,addDays,validDay,statsRange,datesInRange,actionDate,remainingCount,standaloneCountdown};
+root.WanshiliRules={stamp,iso,diff,leapDay,weekday,isWorkday,at,shown,marked,occurrence,label,rewrite,summary,normalize,config,deletionScopes,countupDays,canEndCountup,endCountup,addDays,validDay,statsRange,datesInRange,actionDate,remainingCount,standaloneCountdown};
 })(typeof window==='object'?window:globalThis);
