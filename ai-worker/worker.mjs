@@ -1,4 +1,5 @@
 const endpoint = 'https://api.deepseek.com/chat/completions';
+const model = 'deepseek-flash';
 const maximumBody = 4096;
 const actions = ['create', 'find', 'move', 'cancel', 'end', 'clarify'];
 const types = ['normal', 'up', 'down', 'birthday'];
@@ -93,19 +94,27 @@ function reply(body, status, origin) {
   });
 }
 
+function isConfigured(env) {
+  return Boolean(env.DEEPSEEK_API_KEY && env.AI_IP_LIMIT && env.AI_QUOTA);
+}
+
 export async function handleRequest(request, env, fetchModel = fetch) {
   const path = new URL(request.url).pathname;
   const origin = request.headers.get('Origin');
-  if (!origin || origin !== env.ALLOWED_ORIGIN) return new Response(null, { status: 403 });
+  if (path === '/health' && request.method === 'GET') {
+    const ready = isConfigured(env);
+    return reply({ ready }, ready ? 200 : 503, '*');
+  }
+  if (!origin || origin !== env.ALLOWED_ORIGIN) return new Response(null, { status: 403, headers: { Vary: 'Origin' } });
   if (path !== '/api/plan' && path !== '/api/habit') return reply({ error: 'not_found' }, 404, origin);
   if (request.method === 'OPTIONS') {
     return new Response(null, { status: 204, headers: {
       'Access-Control-Allow-Origin': origin, 'Access-Control-Allow-Methods': 'POST',
-      'Access-Control-Allow-Headers': 'Content-Type', Vary: 'Origin'
+      'Access-Control-Allow-Headers': 'Content-Type', 'Access-Control-Max-Age': '600', Vary: 'Origin'
     } });
   }
   if (request.method !== 'POST') return reply({ error: 'method_not_allowed' }, 405, origin);
-  if (!env.DEEPSEEK_API_KEY || !env.AI_IP_LIMIT || !env.AI_QUOTA) return reply({ error: 'unavailable' }, 503, origin);
+  if (!isConfigured(env)) return reply({ error: 'unavailable' }, 503, origin);
   const input = inputFor(path, await readInput(request));
   if (!input) return reply({ error: 'invalid' }, 400, origin);
 
@@ -118,13 +127,14 @@ export async function handleRequest(request, env, fetchModel = fetch) {
     if (!quota.ok) return reply({ error: 'unavailable' }, 503, origin);
   } catch { return reply({ error: 'unavailable' }, 503, origin); }
 
+  const modelSignal = AbortSignal.timeout(18000);
   try {
     const response = await fetchModel(endpoint, {
       method: 'POST',
       headers: { Authorization: 'Bearer ' + env.DEEPSEEK_API_KEY, 'Content-Type': 'application/json' },
-      signal: AbortSignal.timeout(18000),
+      signal: modelSignal,
       body: JSON.stringify({
-        model: 'deepseek-flash', thinking: { type: 'disabled' }, max_tokens: 450,
+        model, thinking: { type: 'disabled' }, max_tokens: 450,
         response_format: { type: 'json_object' },
         messages: [
           { role: 'system', content: path === '/api/plan' ? planPrompt : habitPrompt },
@@ -140,7 +150,10 @@ export async function handleRequest(request, env, fetchModel = fetch) {
     const output = path === '/api/plan' ? reviewPlan(result) : { summary: boundedText(result?.summary, 360) };
     if (!output || (path === '/api/habit' && !output.summary)) return reply({ error: 'invalid_result' }, 502, origin);
     return reply(output, 200, origin);
-  } catch { return reply({ error: 'unavailable' }, 502, origin); }
+  } catch {
+    if (modelSignal.aborted) return reply({ error: 'upstream_timeout' }, 504, origin);
+    return reply({ error: 'unavailable' }, 502, origin);
+  }
 }
 
 export class AIQuota {

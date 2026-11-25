@@ -10,6 +10,11 @@
     timeZone: 'UTC', dateStyle: 'full'
   }).format(new Date(day + 'T00:00:00Z'));
   const errorMessage = {
+    forbidden: '当前页面没有获得 AI 服务的访问权限。',
+    unavailable: 'AI 服务暂不可用，请稍后重试。',
+    not_found: '当前 AI 接口地址不可用。',
+    method_not_allowed: '当前 AI 接口不支持此请求。',
+    upstream_timeout: '模型响应超时，可以稍后重试。',
     rate_limited: '试用请求较多，请过一分钟再试。',
     daily_limit: '今天的 AI 试用额度已用完，明天可再试。',
     invalid: '请检查输入内容后重试。',
@@ -54,6 +59,16 @@
       return dialog.querySelector('.sub-body');
     }
 
+    async function probe() {
+      try {
+        const response = await fetch(endpoint + '/health', {
+          cache: 'no-store', credentials: 'omit', signal: AbortSignal.timeout(2500)
+        });
+        if (response.status === 200 || response.status === 503) return await response.json();
+      } catch {}
+      return null;
+    }
+
     async function call(path, input, panel, submit, status) {
       pending?.abort();
       const controller = new AbortController();
@@ -61,22 +76,33 @@
       submit.disabled = true;
       status.textContent = 'AI 正在处理…';
       const timer = setTimeout(() => controller.abort(), 22000);
+      const current = () => panel.isConnected && dialog.open && pending === controller;
       try {
         const response = await fetch(endpoint + path, {
           method: 'POST', credentials: 'omit', cache: 'no-store',
           headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(input), signal: controller.signal
         });
-        const data = await response.json();
-        if (!response.ok) throw Error(errorMessage[data.error] || 'AI 服务暂不可用，请稍后重试。');
-        if (!panel.isConnected || !dialog.open) return;
+        const data = response.ok ? await response.json() : await response.json().catch(() => null);
+        if (!current()) return;
+        if (!response.ok) {
+          const code = data?.error || ({ 403: 'forbidden', 404: 'not_found', 405: 'method_not_allowed' })[response.status];
+          status.textContent = errorMessage[code] || errorMessage.unavailable;
+          return;
+        }
         status.textContent = '';
         return data;
       } catch (error) {
-        if (panel.isConnected && dialog.open && pending === controller) {
-          if (error.name === 'AbortError') status.textContent = '本次处理超时，可重试。';
-          else if (error.name === 'TypeError') status.textContent = '当前网络连接不到 AI 服务，可稍后重试。';
-          else status.textContent = error.name === 'SyntaxError' ? 'AI 服务暂不可用，请稍后重试。' : error.message;
-        }
+        if (!current()) return;
+        const timedOut = error.name === 'AbortError';
+        status.textContent = timedOut ? '本次请求超时，可以重试。' : errorMessage.unavailable;
+        if (!timedOut && error.name !== 'TypeError') return;
+        if (!timedOut) status.textContent = '当前网络未能连上 AI 服务，可稍后重试。';
+        const info = await probe();
+        if (!current()) return;
+        if (info?.ready === false) status.textContent = 'AI 服务配置未就绪，请稍后再试。';
+        else if (info?.ready === true) status.textContent = timedOut
+          ? 'AI 服务可以连接，但本次请求超时，可稍后重试。'
+          : 'AI 服务可以连接，但本次请求失败，可稍后重试。';
       } finally {
         clearTimeout(timer);
         if (pending === controller) {
