@@ -57,7 +57,7 @@ test('changing a historical date moves only that occurrence and refuses to overw
 test('an old occurrence can still be corrected after the future series has been cancelled', () => {
   const event = make();
   R.rewrite(event, null, 'series', past, today);
-  assert.deepEqual(R.deletionScopes(event, past, today), { one: true, following: false, series: false });
+  assert.deepEqual(R.deletionScopes(event, past, today), { one: true, following: false, series: false, all: true });
   R.rewrite(event, null, 'one', past, today);
   assert.equal(R.marked(event, past), null);
   assert.equal(R.marked(event, next), null);

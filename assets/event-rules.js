@@ -234,10 +234,12 @@ function deletionScopes(event, day, today) {
   if (!value) return {};
   const target = actionDate(event, day);
   const one = Boolean(target && (target >= today || canCorrectPast(event, target, today)) && occurrenceValue(event, target));
-  if (standaloneCountdown(value)) return { one };
+  const recurring = plan => plan && ['daily','weekly','monthly','yearly','workdays','weekends'].includes(plan.recurrence?.frequency);
+  const all = recurring(value) || segments(event).some(segment => recurring(segment.value));
+  if (standaloneCountdown(value)) return all ? { one, all } : { one };
   const first = nextScheduled(event, today);
   const following = day <= today ? first : nextScheduled(event, day);
-  return { one, following: Boolean(following), series: Boolean(first) };
+  return { one, following: Boolean(following), series: Boolean(first), ...(all ? { all } : {}) };
 }
 function countBefore(event,boundary){
   if(boundary<='0001-01-01')return 0;

@@ -220,7 +220,10 @@ function matchCalendar(plan){
       const event=R.occurrence(raw,day);
       if(!startsWithTitle(event)||(plan.action==='end'&&!R.canEndCountup(raw,day,actualToday)))continue;
       if(!plan.date&&['move','cancel'].includes(plan.action)&&R.canCorrectPast(raw,day,actualToday))continue;
-      if(plan.action==='cancel'&&!Object.values(R.deletionScopes(raw,day,actualToday)).some(Boolean))continue;
+      if(plan.action==='cancel'){
+        const scopes=R.deletionScopes(raw,day,actualToday);
+        if(!scopes.one&&!scopes.following&&!scopes.series&&!(plan.date&&scopes.all))continue;
+      }
       results.push({id:raw.id,day,title:event.title,type:event.type,recurrence:recurrenceLabel(event),
         value:JSON.stringify(event),generation:app.generation});
       break;
@@ -364,6 +367,22 @@ function updateScopeCount(){
   const remaining=event?R.remainingCount(event,draft,chosenScope,selected,today):null;
   label.textContent=remaining===null?'':'按表单里的总次数计算，本次修改后还会安排 '+remaining+' 次。';
 }
+function selectScope(node){
+  if(node.disabled)return;
+  chosenScope=node.dataset.selectScope;
+  $('sub-dialog').querySelectorAll('[data-select-scope]').forEach(button=>{
+    button.classList.toggle('selected',button===node);
+    button.setAttribute('aria-pressed',String(button===node));
+  });
+  const warning=$('delete-all-warning');
+  if(warning){
+    warning.hidden=chosenScope!=='all';
+    const confirm=$('sub-dialog').querySelector('[data-apply-scope="delete"]');
+    confirm.disabled=false;
+    confirm.textContent=chosenScope==='all'?'确认删除全部':'确认删除';
+  }
+  updateScopeCount();
+}
 function scopePicker(kind){
   const deleting=kind==='delete';
   const event=app.events.find(e=>e.id===(deleting?activeEvent:editingId));
@@ -372,10 +391,12 @@ function scopePicker(kind){
   const currentDay=readToday();
   const target=R.actionDate(event,selected);
   const standalone=R.standaloneCountdown(displayed);
-  const single=standalone||(deleting&&displayed.recurrence?.frequency==='once'&&!event.segments);
   const historical=R.canCorrectPast(event,selected,currentDay);
   const available=deleting?R.deletionScopes(event,selected,currentDay):{one:historical||target>=currentDay,following:true,series:true};
-  chosenScope=['one','following','series'].find(scope=>available[scope])||'one';
+  const single=!available.all&&(standalone||(deleting&&displayed.recurrence?.frequency==='once'&&!event.segments));
+  chosenScope=['one','following','series'].find(scope=>available[scope])||null;
+  const scopes=[['one','仅这一次'],['following','这次及之后'],['series',deleting?'全部未发生计划':'整个系列']];
+  if(available.all)scopes.push(['all','整个系列（含历史）']);
   if(deleting)deletion={id:activeEvent,day:selected,generation:detailGeneration,record:detailRecord,today:currentDay};
   const noPlans=deleting&&!Object.values(available).some(Boolean);
   if(deleting&&displayed.type==='up'){
@@ -388,14 +409,18 @@ function scopePicker(kind){
     : noPlans ? '<p>这项日程没有可删除的未来计划。已发生的记录会保留。</p>'
     : (historical?'<p class="scope-note">「仅这一次」只影响 '+fmt(selected)+' 的记录'+
       (deleting?'，统计会同步更新':'，可修改名称、日期和备注。循环、持续次数和 AI 开关仅随批量修改生效')+
-      '。「这次及之后」和「整个系列」从今天起生效。</p>':
+      '。选择未来范围时，从今天起生效。</p>':
       '<p class="scope-note">仅这一次影响'+(target&&target!==selected?' '+fmt(target)+'的到期计划':'选中日')+
-      '。这次及之后以选中日为起点，整个系列覆盖全部未过去计划。批量操作保留历史日程。</p>')+
-      ['one','following','series'].map((v,i)=>'<button class="option-row '+(v===chosenScope?'selected':'')+'" data-select-scope="'+v+'" '+(!available[v]?'disabled':'')+'>'+['仅这一次','这次及之后','整个系列'][i]+'<span class="radio"></span></button>').join('')+
-      (deleting?'':'<p id="scope-count" role="status"></p>');
+      '。'+(deleting?'「这次及之后」从所选日期起删除未发生的计划。「全部未发生计划」从今天起删除。':'这次及之后从选中日起生效，整个系列覆盖全部未过去计划。')+'</p>')+
+      scopes.map(([value,label])=>{
+        const selectedScope=value===chosenScope;
+        return '<button class="option-row '+(selectedScope?'selected':'')+'" data-select-scope="'+value+
+          '" aria-pressed="'+selectedScope+'" '+(!available[value]?'disabled':'')+'>'+label+'<span class="radio"></span></button>';
+      }).join('')+
+      (deleting?(available.all?'<p id="delete-all-warning" class="save-error" role="status" hidden>将删除该系列的全部记录，包括历史日程，相关统计会重新计算。</p>':''):'<p id="scope-count" role="status"></p>');
   sub(single?(deleting?(standalone?'删除倒数日？':'删除日程？'):'保存倒数日修改？'):(deleting?'删除哪些日程？':'将修改应用于'),description+
     '<div class="sub-actions"><button data-action="close-sub">取消</button><button class="'+(deleting?'danger':'primary')+
-    '" data-apply-scope="'+kind+'" '+(noPlans||single&&!available.one?'disabled':'')+'>'+(deleting?'确认删除':'确认保存')+'</button></div>');
+    '" data-apply-scope="'+kind+'" '+(!chosenScope?'disabled':'')+'>'+(deleting?'确认删除':'确认保存')+'</button></div>');
   updateScopeCount();
 }
 async function save(scope=null){
@@ -545,7 +570,7 @@ function confirmDelete(){
   scopePicker('delete');
 }
 function deleteSelected(scope,button){
-  if(deleting||!deletion)return;
+  if(deleting||!deletion||!scope)return;
   const {id,day,generation,record,today:confirmedDay}=deletion;
   deleting=true;
   button.disabled=true;
@@ -565,20 +590,21 @@ function deleteSelected(scope,button){
         const event=data.events[index];
         if(!event||JSON.stringify(event)!==record)throw Error('事项已变更，请关闭详情并重新打开。');
         const options=R.deletionScopes(event,day,currentDay);
-        if(event.type==='up'&&options.series){
+        if(!options[scope])throw Error('没有可删除的计划，请重新选择范围。');
+        if(scope==='all'||event.type==='up'){
           data.events.splice(index,1);
-          removedUp=true;
-        }else{
-          if(!options[scope])throw Error('没有可删除的计划，已发生的日程会保留。');
-          R.rewrite(event,null,scope,day,currentDay);
-        }
+          for(const key of Object.keys(data.records||{})){
+            if(key.startsWith(recordKey(id,'')))delete data.records[key];
+          }
+          removedUp=event.type==='up';
+        }else R.rewrite(event,null,scope,day,currentDay);
       });
       deletion=null;
       $('sub-dialog').close();
       closeModal($('event-dialog'));
       render();
       aiClient.recheck();
-      notify(removedUp?'已删除该正计时':'已删除所选计划');
+      notify(removedUp?'已删除该正计时':scope==='all'?'已删除整个系列及历史':'已删除所选计划');
     }catch(error){
       report(error.message||'删除失败，原日程已保留。');
     }finally{
@@ -604,7 +630,7 @@ async function resetDemo(button){
     notify(error.message||'本地存储不可用，原数据已保留。');
   }
 }
-document.addEventListener('click',e=>{const node=e.target.closest('button,[data-page]');if(!node||deleting)return;if(saving&&node.closest('#event-dialog'))return;if(node.dataset.ai&&aiClient.enabled){aiClient[node.dataset.ai]();return}if(node.dataset.preview){preview.show(node.dataset.preview);return}if(page==='stats'&&handleStatsButton(node))return;if(node.dataset.page){page=node.dataset.page;statsDetail=null;render();return}if(node.dataset.date){selected=node.dataset.date;view=date(selected);render();if(innerWidth<=700){$('day-dialog').innerHTML=$('page-content').querySelector('.day-panel').outerHTML;const close=document.createElement('button');close.className='text-button';close.dataset.action='close-day';close.textContent='关闭';$('day-dialog').querySelector('.day-panel-header').append(close);$('day-dialog').showModal()}return}if(node.dataset.event){detail(node.dataset.event);return}if(node.dataset.summaryDate){selected=node.dataset.summaryDate;view=date(selected);page='calendar';$('sub-dialog').close();render();return}if(node.dataset.selectScope){chosenScope=node.dataset.selectScope;$('sub-dialog').querySelectorAll('[data-select-scope]').forEach(b=>b.classList.toggle('selected',b===node));updateScopeCount();return}if(node.dataset.applyScope){if(node.dataset.applyScope==='delete')deleteSelected(chosenScope,node);else save(chosenScope);return}if(node.dataset.type){
+document.addEventListener('click',e=>{const node=e.target.closest('button,[data-page]');if(!node||deleting)return;if(saving&&node.closest('#event-dialog'))return;if(node.dataset.ai&&aiClient.enabled){aiClient[node.dataset.ai]();return}if(node.dataset.preview){preview.show(node.dataset.preview);return}if(page==='stats'&&handleStatsButton(node))return;if(node.dataset.page){page=node.dataset.page;statsDetail=null;render();return}if(node.dataset.date){selected=node.dataset.date;view=date(selected);render();if(innerWidth<=700){$('day-dialog').innerHTML=$('page-content').querySelector('.day-panel').outerHTML;const close=document.createElement('button');close.className='text-button';close.dataset.action='close-day';close.textContent='关闭';$('day-dialog').querySelector('.day-panel-header').append(close);$('day-dialog').showModal()}return}if(node.dataset.event){detail(node.dataset.event);return}if(node.dataset.summaryDate){selected=node.dataset.summaryDate;view=date(selected);page='calendar';$('sub-dialog').close();render();return}if(node.dataset.selectScope){selectScope(node);return}if(node.dataset.applyScope){if(node.dataset.applyScope==='delete')deleteSelected(chosenScope,node);else save(chosenScope);return}if(node.dataset.type){
   if(draft.type===node.dataset.type)return;
   draft.type=node.dataset.type;
   draft.calendarType='solar';

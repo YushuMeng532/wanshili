@@ -44,7 +44,7 @@ test('following and series deletion remove countdown previews while preserving c
     assert.equal(R.marked(saved, '2026-11-30'), null);
     assert.equal(R.marked(saved, '2026-12-07'), null);
     assert.equal(R.marked(saved, '2026-11-23').type, 'down');
-    assert.deepEqual(R.deletionScopes(saved, '2026-11-23', today), { one: false, following: false, series: false });
+    assert.deepEqual(R.deletionScopes(saved, '2026-11-23', today), { one: false, following: false, series: false, all: true });
   }
 });
 
@@ -86,7 +86,7 @@ test('ordinary recurrence and birthday respect all deletion scopes', () => {
 
 test('following is unavailable after the last retained plan, but series can still remove an earlier plan', () => {
   const event = make('down', '2026-11-23', weekly, { endCondition: 2 });
-  assert.deepEqual(R.deletionScopes(event, '2026-12-01', today), { one: true, following: false, series: true });
+  assert.deepEqual(R.deletionScopes(event, '2026-12-01', today), { one: true, following: false, series: true, all: true });
   assert.deepEqual(R.deletionScopes(make('up', '2026-11-01', { frequency: 'none' }), today, today), { series: true });
 });
 
@@ -118,4 +118,17 @@ test('the recurring deletion scope works with every calendar recurrence option',
       }
     }
   }
+});
+
+test('complete deletion is available for each recurring type, even when only history remains', () => {
+  const past = '2026-11-23';
+  for (const [type, recurrence] of [['normal', weekly], ['down', weekly], ['birthday', { frequency: 'yearly' }]]) {
+    const event = make(type, past, recurrence);
+    assert.equal(R.deletionScopes(event, past, today).all, true);
+    R.rewrite(event, null, 'series', past, today);
+    assert.equal(R.deletionScopes(reload(event), past, today).all, true);
+    assert.equal(R.deletionScopes(event, past, today).series, false);
+  }
+  assert.equal(R.deletionScopes(make('normal', today, { frequency: 'once' }), today, today).all, undefined);
+  assert.equal(R.deletionScopes(make('up', past, { frequency: 'none' }), today, today).all, undefined);
 });
