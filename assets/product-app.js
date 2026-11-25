@@ -367,6 +367,10 @@ function scopePicker(kind){
   const single=R.standaloneCountdown(displayed);
   const unavailable=!target||target<today;
   chosenScope=unavailable&&!single?'following':'one';
+  if(deleting&&displayed.type==='up'){
+    sub('删除正计时？','<p style="color:#d64545;font-weight:600">这将会导致整个系列都被删除</p><div class="sub-actions"><button data-action="close-sub">取消</button><button class="danger" data-apply-scope="delete">确认删除</button></div>');
+    return;
+  }
   const description=single
     ? '<p>'+(!target?'暂时找不到目标日。':target<today?'当前目标日已过去，历史日程保留。':
       (deleting?'将删除 ':'将修改 ')+fmt(target)+'的「'+esc(displayed.title)+'」。')+'</p>'
@@ -512,20 +516,28 @@ async function deleteSelected(scope,button){
   const id=activeEvent,day=selected,generation=detailGeneration;
   button.disabled=true;
   try{
+    let removedUp=false;
     await transaction(data=>{
       assertGeneration(data,generation);
-      const event=data.events.find(e=>e.id===id);
-      R.rewrite(event,null,scope,day,iso(new Date()));
+      const index=data.events.findIndex(e=>e.id===id);
+      if(index<0)throw Error('事项已变更，请重新打开后操作。');
+      const event=data.events[index];
+      if(event.type==='up'){
+        data.events.splice(index,1);
+        removedUp=true;
+      }else{
+        R.rewrite(event,null,scope,day,iso(new Date()));
+      }
     });
     $('sub-dialog').close();
     closeModal($('event-dialog'));
     render();
-    notify('已取消对应计划，过去日程已保留');
+    notify(removedUp?'已删除该正计时':'已取消对应计划，过去日程已保留');
   }catch(error){
     button.disabled=false;
     notify(error.message||'删除失败，原日程已保留');
   }
-}
+}}
 async function resetDemo(button){
   button.disabled=true;
   try{
