@@ -94,27 +94,69 @@ function reply(body, status, origin) {
   });
 }
 
-function isConfigured(env) {
-  return Boolean(env.DEEPSEEK_API_KEY && env.AI_IP_LIMIT && env.AI_QUOTA);
+// 拒绝类响应故意带上通配 CORS 头：浏览器才能读到 403/404 的具体原因，
+// 而不是把来源配错、路径写错都吞成一个笼统的网络错误。响应体不含任何用户数据。
+function rejected(error, status) {
+  return new Response(JSON.stringify({ error }), {
+    status,
+    headers: {
+      'Content-Type': 'application/json; charset=utf-8',
+      'Access-Control-Allow-Origin': '*',
+      'Cache-Control': 'no-store',
+      'X-Content-Type-Options': 'nosniff',
+      Vary: 'Origin'
+    }
+  });
+}
+
+// 可以直接在手机浏览器打开 <endpoint>/health 自检，不需要 Origin、不消耗额度、不调用模型。
+function health(request, env) {
+  if (request.method === 'OPTIONS') {
+    return new Response(null, { status: 204, headers: {
+      'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'GET', 'Access-Control-Allow-Headers': 'Content-Type'
+    } });
+  }
+  if (request.method !== 'GET' && request.method !== 'HEAD') {
+    return new Response(null, { status: 405, headers: { Allow: 'GET', 'Access-Control-Allow-Origin': '*' } });
+  }
+  const checks = {
+    key: Boolean(env.DEEPSEEK_API_KEY),
+    rateLimit: Boolean(env.AI_IP_LIMIT),
+    quota: Boolean(env.AI_QUOTA)
+  };
+  return new Response(JSON.stringify({
+    ok: true,
+    ready: Object.values(checks).every(Boolean),
+    model,
+    checks,
+    now: new Date().toISOString()
+  }), {
+    status: 200,
+    headers: {
+      'Content-Type': 'application/json; charset=utf-8',
+      'Access-Control-Allow-Origin': '*',
+      'Cache-Control': 'no-store',
+      'X-Content-Type-Options': 'nosniff'
+    }
+  });
 }
 
 export async function handleRequest(request, env, fetchModel = fetch) {
   const path = new URL(request.url).pathname;
   const origin = request.headers.get('Origin');
-  if (path === '/health' && request.method === 'GET') {
-    const ready = isConfigured(env);
-    return reply({ ready }, ready ? 200 : 503, '*');
-  }
-  if (!origin || origin !== env.ALLOWED_ORIGIN) return new Response(null, { status: 403, headers: { Vary: 'Origin' } });
-  if (path !== '/api/plan' && path !== '/api/habit') return reply({ error: 'not_found' }, 404, origin);
+  const allowed = Boolean(origin) && origin === env.ALLOWED_ORIGIN;
+  if (path === '/health') return health(request, env);
   if (request.method === 'OPTIONS') {
+    // 预检对任何来源放行，让不允许的来源在正式请求里拿到可读的 403。
     return new Response(null, { status: 204, headers: {
-      'Access-Control-Allow-Origin': origin, 'Access-Control-Allow-Methods': 'POST',
+      'Access-Control-Allow-Origin': allowed ? origin : '*', 'Access-Control-Allow-Methods': 'POST',
       'Access-Control-Allow-Headers': 'Content-Type', 'Access-Control-Max-Age': '600', Vary: 'Origin'
     } });
   }
-  if (request.method !== 'POST') return reply({ error: 'method_not_allowed' }, 405, origin);
-  if (!isConfigured(env)) return reply({ error: 'unavailable' }, 503, origin);
+  if (!allowed) return rejected('forbidden', 403);
+  if (path !== '/api/plan' && path !== '/api/habit') return rejected('not_found', 404);
+  if (request.method !== 'POST') return rejected('method_not_allowed', 405);
+  if (!env.DEEPSEEK_API_KEY || !env.AI_IP_LIMIT || !env.AI_QUOTA) return reply({ error: 'unavailable' }, 503, origin);
   const input = inputFor(path, await readInput(request));
   if (!input) return reply({ error: 'invalid' }, 400, origin);
 
@@ -127,12 +169,11 @@ export async function handleRequest(request, env, fetchModel = fetch) {
     if (!quota.ok) return reply({ error: 'unavailable' }, 503, origin);
   } catch { return reply({ error: 'unavailable' }, 503, origin); }
 
-  const modelSignal = AbortSignal.timeout(18000);
   try {
     const response = await fetchModel(endpoint, {
       method: 'POST',
       headers: { Authorization: 'Bearer ' + env.DEEPSEEK_API_KEY, 'Content-Type': 'application/json' },
-      signal: modelSignal,
+      signal: AbortSignal.timeout(18000),
       body: JSON.stringify({
         model, thinking: { type: 'disabled' }, max_tokens: 450,
         response_format: { type: 'json_object' },
@@ -150,10 +191,7 @@ export async function handleRequest(request, env, fetchModel = fetch) {
     const output = path === '/api/plan' ? reviewPlan(result) : { summary: boundedText(result?.summary, 360) };
     if (!output || (path === '/api/habit' && !output.summary)) return reply({ error: 'invalid_result' }, 502, origin);
     return reply(output, 200, origin);
-  } catch {
-    if (modelSignal.aborted) return reply({ error: 'upstream_timeout' }, 504, origin);
-    return reply({ error: 'unavailable' }, 502, origin);
-  }
+  } catch { return reply({ error: 'unavailable' }, 502, origin); }
 }
 
 export class AIQuota {
