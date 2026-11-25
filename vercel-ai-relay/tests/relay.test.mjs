@@ -1,0 +1,9 @@
+import {test} from 'node:test';import assert from 'node:assert/strict';import{createRelay,origin}from '../lib/relay.mjs';
+function response(){return {headers:{},setHeader(k,v){this.headers[k]=v},status(n){this.code=n;return this},json(v){this.data=v;return this},end(){return this}}}
+const req={method:'POST',headers:{origin,'content-type':'application/json'},body:{text:'明天交报告',today:'2026-11-25',timeZone:'Asia/Shanghai'}};
+test('unapproved origin never reaches upstream',async()=>{const r=response();await createRelay('/api/plan',()=>{throw Error('must not call')})({...req,headers:{origin:'https://other.example'}},r);assert.equal(r.code,403)});
+test('preflight permits JSON POST from current frontend',async()=>{const r=response();await createRelay('/api/plan')({...req,method:'OPTIONS'},r);assert.equal(r.code,204);assert.equal(r.headers['Access-Control-Allow-Origin'],origin)});
+test('forwards the fixed route and preserves draft response',async()=>{const r=response();await createRelay('/api/plan',async(url,options)=>{assert.ok(url.endsWith('/api/plan'));assert.equal(options.headers.Origin,origin);assert.equal(JSON.parse(options.body).text,req.body.text);return Response.json({action:'create',title:'交报告'})})(req,r);assert.equal(r.code,200);assert.equal(r.data.action,'create')});
+test('preserves global quota refusal',async()=>{const r=response();await createRelay('/api/habit',async()=>Response.json({error:'daily_limit'},{status:429}))(req,r);assert.equal(r.code,429);assert.equal(r.data.error,'daily_limit')});
+test('oversized body does not reach upstream',async()=>{const r=response();await createRelay('/api/plan',()=>{throw Error('must not call')})({...req,body:{text:'x'.repeat(5000)}},r);assert.equal(r.code,400)});
+test('network failures produce structured service errors',async()=>{const r=response();await createRelay('/api/plan',async()=>{throw new TypeError('network')})(req,r);assert.equal(r.code,502);assert.equal(r.data.error,'unavailable')});
