@@ -100,7 +100,7 @@
         const info = await probe();
         if (!current()) return;
         if (info?.ready === false) status.textContent = 'AI 服务配置未就绪，请稍后再试。';
-        else if (info?.ready === true) status.textContent = timedOut
+        else if (info?.ready === true || info?.reachable === true) status.textContent = timedOut
           ? 'AI 服务可以连接，但本次请求超时，可稍后重试。'
           : 'AI 服务可以连接，但本次请求失败，可稍后重试。';
       } finally {
@@ -112,6 +112,38 @@
       }
     }
 
+    async function checkConnection(button, status) {
+      if (pending) return;
+      const controller = new AbortController();
+      pending = controller;
+      button.disabled = true;
+      const timer = setTimeout(() => controller.abort(), 8000);
+      status.textContent = '正在检查解析接口…';
+      try {
+        const response = await fetch(endpoint + '/api/plan', {
+          method: 'POST', credentials: 'omit', cache: 'no-store',
+          headers: { 'Content-Type': 'application/json' },
+          body: '{}', signal: controller.signal
+        });
+        const data = await response.json().catch(() => null);
+        if (pending !== controller) return;
+        status.textContent = response.status === 400 && data?.error === 'invalid'
+          ? '浏览器已连通解析接口。请再试一次解析。'
+          : '解析接口返回 HTTP ' + response.status + (data?.error ? '（' + data.error + '）' : '') + '。';
+      } catch (error) {
+        if (pending !== controller) return;
+        const info = await probe();
+        if (pending !== controller) return;
+        status.textContent = info?.reachable === true || info?.ready === true
+          ? '健康检查已通过，但浏览器未收到解析接口的 POST 响应。'
+          : '浏览器未收到 AI 服务的响应。';
+      } finally {
+        clearTimeout(timer);
+        if (pending === controller) pending = undefined;
+        button.disabled = false;
+      }
+    }
+
     function voice(text = '') {
       const Speech = window.SpeechRecognition || window.webkitSpeechRecognition;
       const panel = show('AI 录入日程',
@@ -120,11 +152,14 @@
         '<p>可以直接输入，也可以用手机键盘听写。点「解析日程」会将确认后的文字、当前日期和时区发送给 DeepSeek。</p>' +
         '<p role="status" aria-live="polite" data-ai-status></p><div class="sub-actions">' +
         (Speech ? '<button type="button" data-speak>开始听写</button>' : '') +
+        '<button type="button" data-ai-check>检查连接</button>' +
         '<button class="primary" type="submit">解析日程</button></div></form>');
       const input = panel.querySelector('textarea');
       const submit = panel.querySelector('[type="submit"]');
       const status = panel.querySelector('[data-ai-status]');
       const speak = panel.querySelector('[data-speak]');
+      const connectionCheck = panel.querySelector('[data-ai-check]');
+      connectionCheck.onclick = () => checkConnection(connectionCheck, status);
       input.value = text;
       if (speak) speak.onclick = () => {
         if (recognition) { recognition.stop(); return; }
