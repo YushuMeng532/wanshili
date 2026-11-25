@@ -143,7 +143,7 @@
       const panel = show('AI 录入日程',
         '<form class="ai-live-form" id="voice-ai-form"><label for="ai-calendar-text">你想安排什么？</label>' +
         '<textarea id="ai-calendar-text" rows="4" maxlength="280" placeholder="例如：明天交报告" required></textarea>' +
-        '<p>可以直接输入，也可以用手机键盘听写。点「解析日程」会将确认后的文字、当前日期和时区发送给 AI 助手。</p>' +
+        '<p>' + (Speech ? '可以点「开始听写」用语音，也可以直接输入。点「解析日程」会将确认后的文字、当前日期和时区发送给 AI 助手。' : '本机浏览器不支持网页语音识别，请用键盘自带的麦克风听写：点输入框 → 键盘上的 🎤 键 → 说出内容。点「解析日程」会将确认后的文字、当前日期和时区发送给 AI 助手。') + '</p>' +
         '<div class="ai-listening" data-ai-listening hidden aria-hidden="true"><span class="ai-wave">' +
         '<i></i><i></i><i></i><i></i><i></i></span></div>' +
         '<p role="status" aria-live="polite" data-ai-status></p><div class="sub-actions">' +
