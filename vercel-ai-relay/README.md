@@ -1,6 +1,6 @@
 # 万事历 Vercel AI 转发
 
-浏览器访问 https://wanshili-ai-relay.vercel.app ，服务端转发至现有 Cloudflare Worker。DeepSeek 密钥与每日100次全局额度保留在Worker，不写入本目录。
+浏览器访问 https://wanshili-ai-relay.vercel.app ，服务端转发至现有 Cloudflare Worker。AI 助手 密钥与每日100次全局额度保留在Worker，不写入本目录。
 
 只支持GitHub Pages来源的 /api/plan 和 /api/habit；保留上游状态码与错误，限制正文大小，禁止任意目标转发。Worker原有每地址5次/分钟限制继续有效，Vercel共享出口可能使多访客共享这项限制。
 
