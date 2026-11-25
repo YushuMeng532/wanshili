@@ -1,0 +1,8 @@
+{
+  "name": "wanshili-ai-relay",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": "24.x"
+  }
+}
