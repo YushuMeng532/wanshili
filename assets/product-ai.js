@@ -39,17 +39,11 @@
     function cancelWork() {
       pending?.abort();
       pending = undefined;
-      if (recognition) {
-        recognition.onresult = null;
-        recognition.onerror = null;
-        recognition.onend = null;
-        try { recognition.abort(); } catch {}
-      }
-      recognition = undefined;
+      recognition?.cancel();
     }
     dialog.addEventListener('close', cancelWork);
     document.addEventListener('visibilitychange', () => {
-      if (document.hidden) recognition?.abort();
+      if (document.hidden) recognition?.cancel('听写已停止。可以再试，或直接输入。');
     });
 
     function show(title, html) {
@@ -149,7 +143,9 @@
       const panel = show('AI 录入日程',
         '<form class="ai-live-form" id="voice-ai-form"><label for="ai-calendar-text">你想安排什么？</label>' +
         '<textarea id="ai-calendar-text" rows="4" maxlength="280" placeholder="例如：明天交报告" required></textarea>' +
-        '<p>可以直接输入，也可以用手机键盘听写。点「解析日程」会将确认后的文字、当前日期和时区发送给 DeepSeek。</p>' +
+        '<p>可以直接输入，也可以用手机键盘听写。点「解析日程」会将确认后的文字、当前日期和时区发送给 AI 助手。</p>' +
+        '<div class="ai-listening" data-ai-listening hidden aria-hidden="true"><span class="ai-wave">' +
+        '<i></i><i></i><i></i><i></i><i></i></span></div>' +
         '<p role="status" aria-live="polite" data-ai-status></p><div class="sub-actions">' +
         (Speech ? '<button type="button" data-speak>开始听写</button>' : '') +
         '<button type="button" data-ai-check>检查连接</button>' +
@@ -159,31 +155,95 @@
       const status = panel.querySelector('[data-ai-status]');
       const speak = panel.querySelector('[data-speak]');
       const connectionCheck = panel.querySelector('[data-ai-check]');
-      connectionCheck.onclick = () => checkConnection(connectionCheck, status);
+      connectionCheck.onclick = () => {
+        if (!recognition) checkConnection(connectionCheck, status);
+      };
       input.value = text;
       if (speak) speak.onclick = () => {
-        if (recognition) { recognition.stop(); return; }
-        const session = new Speech();
+        if (recognition || pending) return;
+        const wave = panel.querySelector('[data-ai-listening]');
+        const noSpeech = '没听到语音。可以重新听写，或直接输入。';
+        let session;
+        try { session = new Speech(); }
+        catch {
+          status.textContent = '听写暂不可用，可以使用键盘听写或直接输入。';
+          return;
+        }
         session.lang = 'zh-CN';
+        session.continuous = false;
         session.interimResults = false;
-        recognition = session;
-        session.onstart = () => {
-          speak.textContent = '完成听写';
-          status.textContent = '听写中。浏览器的语音服务可能处理录音。';
-          submit.disabled = true;
+
+        let timer, transcript = '', stopping = false;
+        const active = () => recognition === work;
+        const work = {
+          cancel(message) {
+            finish(message);
+            try { session.abort(); } catch {}
+          }
         };
-        session.onresult = event => {
-          input.value = Array.from(event.results, item => item[0].transcript).join('').slice(0, 280);
-          status.textContent = '请核对和编辑听写文字，再解析日程。';
-        };
-        session.onerror = () => { status.textContent = '听写暂不可用，可以使用键盘听写或直接输入。'; };
-        session.onend = () => {
+        recognition = work;
+
+        function finish(message) {
+          if (!active()) return;
+          clearTimeout(timer);
           recognition = undefined;
-          speak.textContent = '开始听写';
-          submit.disabled = false;
+          wave.hidden = true;
+          speak.disabled = submit.disabled = connectionCheck.disabled = false;
+          input.readOnly = false;
+          if (message) {
+            status.textContent = message;
+          } else if (transcript) {
+            input.value = transcript.slice(0, 280);
+            status.textContent = '请核对听写文字，再解析日程。';
+          } else {
+            status.textContent = noSpeech;
+          }
+        }
+
+        function arm(callback, delay) {
+          clearTimeout(timer);
+          timer = setTimeout(callback, delay);
+        }
+
+        function stop() {
+          if (!active() || stopping) return;
+          stopping = true;
+          wave.hidden = true;
+          status.textContent = '正在转成文字…';
+          arm(() => work.cancel(transcript ? undefined : noSpeech), 5000);
+          try { session.stop(); }
+          catch { work.cancel(); }
+        }
+
+        speak.disabled = submit.disabled = connectionCheck.disabled = true;
+        input.readOnly = true;
+        status.textContent = '正在开启麦克风…';
+        arm(() => work.cancel('麦克风启动超时，可以检查权限后重试。'), 15000);
+        session.onstart = () => {
+          if (!active()) return;
+          wave.hidden = false;
+          status.textContent = '可以说话了，停顿后会自动结束。';
+          arm(stop, 6000);
         };
+        session.onspeechstart = () => {
+          if (active() && !stopping) arm(stop, 30000);
+        };
+        session.onspeechend = stop;
+        session.onresult = event => {
+          if (!active()) return;
+          transcript = Array.from(event.results, item => item[0].transcript).join('').trim();
+        };
+        session.onerror = event => {
+          if (event.error === 'no-speech') finish();
+          else if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
+            finish('麦克风权限未开启，可以授权后重试，或直接输入。');
+          } else {
+            finish('听写暂不可用，可以使用键盘听写或直接输入。');
+          }
+        };
+        session.onend = () => finish();
         try { session.start(); }
-        catch { recognition = undefined; status.textContent = '听写暂不可用，可以直接输入。'; }
+        catch { work.cancel('听写暂不可用，可以直接输入。'); }
       };
 
       panel.querySelector('form').addEventListener('submit', async event => {
@@ -258,7 +318,7 @@
           escape(snapshot.start + ' 至 ' + snapshot.end) + '</p><p>' +
           Object.entries(snapshot.counts).map(([type, count]) => typeNames[type] + ' ' + count + ' 天').join(' · ') +
           '</p></div>' : '<p>先在「我的」开启 AI 习惯分析，再为希望纳入的日程打开参与开关。</p>') +
-        '<p>点「生成 AI 总结」后，仅将统计区间和天数发送给 DeepSeek。</p>' +
+        '<p>点「生成 AI 总结」后，仅将统计区间和天数发送给 AI 助手。</p>' +
         '<p role="status" aria-live="polite" data-ai-status></p>' +
         '<div class="sub-actions"><button class="primary" type="button" data-ai-generate ' +
         (!snapshot.enabled || !snapshot.total ? 'disabled' : '') + '>生成 AI 总结</button></div>');
@@ -285,7 +345,7 @@
 
     function privacy() {
       show('隐私说明', '<p>日程和偏好保存在当前浏览器。AI 录入只发送你确认的文字、日期和时区，已有日程在本机查找。听写由浏览器的语音服务处理。</p>' +
-        '<p>生成习惯总结时，只向 DeepSeek 发送授权日程的分类天数与日期区间。退出后可随时在「我的」关闭分析。</p>');
+        '<p>生成习惯总结时，只向 AI 助手 发送授权日程的分类天数与日期区间。退出后可随时在「我的」关闭分析。</p>');
     }
 
     function recheck() {

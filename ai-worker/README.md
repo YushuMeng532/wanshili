@@ -32,4 +32,4 @@
 4. 将 Worker 的 HTTPS 根地址写入 `../assets/product-ai-config.js`，提交后等 GitHub Pages 部署。日程在同一浏览器仍使用原存储。
 5. 打开 `https://你的端点/health` 确认 `ready` 为 `true`，再在新浏览器会话里打开公开链接，输入「明天交报告」。核对真实 API 返回的草稿，保存后刷新检查日程。开启习惯分析，并给一条过去的试用事项授权，再生成总结。
 
-默认每个来源地址在一个 Cloudflare 机房约 5 次/分钟。全站按北京时间每天最多向 DeepSeek 发起 100 次模型请求，包括已发起但失败的请求。每日上限可通过 `DAILY_LIMIT` 调整，设为 `0` 可暂停真实调用。服务使用 `deepseek-flash`，限定输入和输出长度。 [限流文档](https://developers.cloudflare.com/workers/runtime-apis/bindings/rate-limit/) · [DeepSeek 接口文档](https://api-docs.deepseek.com/api/create-chat-completion/)
+默认每个来源地址在一个 Cloudflare 机房约 5 次/分钟。全站按北京时间每天最多向 AI 助手发起 100 次模型请求，包括已发起但失败的请求。每日上限可通过 `DAILY_LIMIT` 调整，设为 `0` 可暂停真实调用。服务限定输入和输出长度。 [限流文档](https://developers.cloudflare.com/workers/runtime-apis/bindings/rate-limit/)

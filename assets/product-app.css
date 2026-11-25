@@ -222,3 +222,14 @@ dialog{border:1px solid var(--line);box-shadow:0 24px 100px #26384226;padding:0;
 }
 
 .ai-live-form textarea{display:block;width:100%;min-height:108px;margin:8px 0 12px;padding:12px;border:1px solid var(--line);border-radius:12px;font:inherit;resize:vertical}.ai-live-form [data-ai-status]:empty{display:none}
+
+.ai-listening{display:flex;align-items:center;width:max-content;min-height:32px;margin-top:10px;padding:0 11px;border-radius:12px;background:#eaf1f4;color:#4f6f82}
+.ai-listening[hidden]{display:none}
+.ai-wave{display:flex;align-items:center;gap:3px;height:18px}
+.ai-wave i{display:block;width:3px;height:16px;border-radius:3px;background:currentColor;transform:scaleY(.35);animation:ai-listening-wave .95s ease-in-out infinite alternate}
+.ai-wave i:nth-child(2){animation-delay:-.45s}
+.ai-wave i:nth-child(3){animation-delay:-.2s}
+.ai-wave i:nth-child(4){animation-delay:-.65s}
+.ai-wave i:nth-child(5){animation-delay:-.3s}
+@keyframes ai-listening-wave{to{transform:scaleY(1)}}
+@media(prefers-reduced-motion:reduce){.ai-wave i{animation:none}.ai-wave i:nth-child(2n),.ai-wave i:nth-child(3){transform:scaleY(.75)}}
