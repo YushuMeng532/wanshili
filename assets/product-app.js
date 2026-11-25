@@ -15,7 +15,7 @@ let page='calendar',selected=today,view=date(today),draft=null,original='',editi
 let statsPeriod='month',statsMode='category',customRange=null,statsDetail=null;
 const schemaVersion=window.WanshiliStorage.schemaVersion;
 let app={schemaVersion,revision:-1,generation:0,events:[],settings:{aiEnabled:false},sampleData:false};
-let storeReady=false,editorGeneration=0,detailGeneration=0,detailRecord='',deletion=null,deleting=false;
+let storeReady=false,editorGeneration=0,editorHistory=null,detailGeneration=0,detailRecord='',deletion=null,deleting=false;
 function seed(){const birthday=today,exam=new Date(date(today).getTime()+28*DAY),start=new Date(date(today).getTime()-10*DAY);return {schemaVersion,revision:0,generation:0,events:[{id:'sample-reading',title:'相识纪念日',type:'up',date:iso(start),calendarType:'solar',recurrence:{frequency:'none',weekdays:[]},endCondition:null,aiIncluded:false,note:'从这一天开始，记住一起走过的日子。',createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()},{id:'sample-exam',title:'考试',type:'down',date:iso(exam),calendarType:'solar',recurrence:{frequency:'once',weekdays:[]},endCondition:null,aiIncluded:false,note:'记住这一个重要日期。',createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()},{id:'sample-birthday',title:'小林生日',type:'birthday',date:birthday,calendarType:'solar',recurrence:{frequency:'yearly',weekdays:[]},endCondition:null,aiIncluded:false,note:'给重要的人留一句祝福。',createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()}],records:{},settings:{aiEnabled:false},sampleData:true}}
 const store=window.WanshiliStorage.create({
   indexedDB:window.indexedDB,
@@ -219,6 +219,7 @@ function matchCalendar(plan){
     for(const day of new Set(candidates)){
       const event=R.occurrence(raw,day);
       if(!startsWithTitle(event)||(plan.action==='end'&&!R.canEndCountup(raw,day,actualToday)))continue;
+      if(!plan.date&&['move','cancel'].includes(plan.action)&&R.canCorrectPast(raw,day,actualToday))continue;
       if(plan.action==='cancel'&&!Object.values(R.deletionScopes(raw,day,actualToday)).some(Boolean))continue;
       results.push({id:raw.id,day,title:event.title,type:event.type,recurrence:recurrenceLabel(event),
         value:JSON.stringify(event),generation:app.generation});
@@ -230,13 +231,16 @@ function matchCalendar(plan){
 async function openAIMatch(plan,item){
   await refreshData();
   if(!$('sub-dialog').open)return;
-  const event=R.occurrence(app.events.find(row=>row.id===item.id),item.day);
+  const raw=app.events.find(row=>row.id===item.id);
+  const event=R.occurrence(raw,item.day);
   if(app.generation!==item.generation||JSON.stringify(event)!==item.value){
     notify('事项已变化，请重新解析和选择。');
     return;
   }
-  if(plan.action==='move'&&(item.day<readToday()||!R.validDay(plan.targetDate)||plan.targetDate<readToday())){
-    notify('已发生的日程保留。请选择未来的目标日期。');
+  const currentDay=readToday();
+  if(plan.action==='move'&&(!R.validDay(plan.targetDate)||((item.day<currentDay||plan.targetDate<currentDay)&&
+    !R.canCorrectPast(raw,item.day,currentDay)))){
+    notify('请选择可修改的日程日期。仅过去的普通循环日程可单次补改。');
     return;
   }
   $('sub-dialog').close();
@@ -309,7 +313,8 @@ function openEditor(id=null,initialType='up',suggestion=null,expected=null){
   $('day-dialog').close();
   editingId=id;
   editorGeneration=app.generation;
-  draft=event?{...structuredClone(event),aiIncluded:stored.aiIncluded===true}:{
+  editorHistory=R.canCorrectPast(stored,selected,readToday())?{date:event.date,record:JSON.stringify(stored)}:null;
+  draft=event?{...structuredClone(event),date:editorHistory?selected:event.date,aiIncluded:stored.aiIncluded===true}:{
     id:uid(),title:'',type:initialType,date:selected,calendarType:'solar',
     recurrence:{frequency:initialType==='normal'?'once':'none',weekdays:[]},
     endCondition:initialType==='normal'?1:null,aiIncluded:false,note:''
@@ -368,7 +373,8 @@ function scopePicker(kind){
   const target=R.actionDate(event,selected);
   const standalone=R.standaloneCountdown(displayed);
   const single=standalone||(deleting&&displayed.recurrence?.frequency==='once'&&!event.segments);
-  const available=deleting?R.deletionScopes(event,selected,currentDay):{one:target>=currentDay,following:true,series:true};
+  const historical=R.canCorrectPast(event,selected,currentDay);
+  const available=deleting?R.deletionScopes(event,selected,currentDay):{one:historical||target>=currentDay,following:true,series:true};
   chosenScope=['one','following','series'].find(scope=>available[scope])||'one';
   if(deleting)deletion={id:activeEvent,day:selected,generation:detailGeneration,record:detailRecord,today:currentDay};
   const noPlans=deleting&&!Object.values(available).some(Boolean);
@@ -380,9 +386,11 @@ function scopePicker(kind){
     ? '<p>'+(!target?'暂时找不到目标日。':target<currentDay?'日期已过去，历史日程保留。':
       (deleting?'将删除 ':'将修改 ')+fmt(target)+'的「'+esc(displayed.title)+'」。')+'</p>'
     : noPlans ? '<p>这项日程没有可删除的未来计划。已发生的记录会保留。</p>'
-    : '<p class="scope-note">过去的日程已发生并保留。仅这一次影响'+
-      (target&&target!==selected?' '+fmt(target)+'的到期计划':'选中日')+
-      '。这次及之后以选中日为起点。整个系列覆盖全部未过去计划。</p>'+
+    : (historical?'<p class="scope-note">「仅这一次」只影响 '+fmt(selected)+' 的记录'+
+      (deleting?'，统计会同步更新':'，可修改名称、日期和备注。循环、持续次数和 AI 开关仅随批量修改生效')+
+      '。「这次及之后」和「整个系列」从今天起生效。</p>':
+      '<p class="scope-note">仅这一次影响'+(target&&target!==selected?' '+fmt(target)+'的到期计划':'选中日')+
+      '。这次及之后以选中日为起点，整个系列覆盖全部未过去计划。批量操作保留历史日程。</p>')+
       ['one','following','series'].map((v,i)=>'<button class="option-row '+(v===chosenScope?'selected':'')+'" data-select-scope="'+v+'" '+(!available[v]?'disabled':'')+'>'+['仅这一次','这次及之后','整个系列'][i]+'<span class="radio"></span></button>').join('')+
       (deleting?'':'<p id="scope-count" role="status"></p>');
   sub(single?(deleting?(standalone?'删除倒数日？':'删除日程？'):'保存倒数日修改？'):(deleting?'删除哪些日程？':'将修改应用于'),description+
@@ -398,8 +406,14 @@ async function save(scope=null){
   if(draft.calendarType==='lunar'){drawEditor('农历暂未接入，填写内容已保留。');return}
   if(draft.type==='up'&&draft.endDate&&draft.date>draft.endDate){drawEditor('开始日期不能晚于已记录的结束日期。');return}
   if(editingId&&!scope){scopePicker('edit');return}
-  const id=editingId,day=selected,generation=editorGeneration;
-  const copy=R.normalize(structuredClone(draft));
+  const id=editingId,day=selected,generation=editorGeneration,history=editorHistory;
+  const singleCorrection=Boolean(history&&scope==='one');
+  if(history&&scope!=='one'&&draft.date!==day&&draft.date<readToday()){
+    $('sub-dialog').close();
+    drawEditor('要补改过去的日期，请选择「仅这一次」。');
+    return;
+  }
+  const copy=R.normalize({...structuredClone(draft),date:history&&scope!=='one'&&draft.date===day?history.date:draft.date});
   delete copy.limitUsed;
   delete copy.limitFrom;
   saving=true;
@@ -412,20 +426,23 @@ async function save(scope=null){
       if(id){
         const event=data.events.find(e=>e.id===id);
         if(typeLocked(event,currentDay)&&copy.type!==event.type)throw Error('开始日期已过，从第二天起不可更改类型。');
+        if(history&&JSON.stringify(event)!==history.record)throw Error('事项已变更，请关闭并重新打开。');
+        if(scope==='one'&&R.canCorrectPast(event,day,currentDay)!==singleCorrection)throw Error('日期已变更，请关闭后重新打开。');
         R.rewrite(event,copy,scope,day,currentDay);
-        event.aiIncluded=copy.aiIncluded;
+        if(!singleCorrection)event.aiIncluded=copy.aiIncluded;
       }else{
         copy.createdAt=new Date().toISOString();
         copy.updatedAt=copy.createdAt;
         data.events.push(copy);
       }
     });
-    selected=id?day:copy.date;
+    selected=id&&!singleCorrection?day:copy.date;
     view=date(selected);
     page='calendar';
     saving=false;
     closeModal($('event-dialog'));
     render();
+    aiClient.recheck();
     notify('已保存');
   }catch(error){
     saving=false;
@@ -442,7 +459,8 @@ function detail(id){
   if(!event)return;
 
   const dateLabel={up:'开始日期',down:'目标日期',birthday:'生日日期',normal:'日期'}[event.type];
-  const lines=[[dateLabel,fmt(event.date)]];
+  const canCorrect=R.canCorrectPast(raw,selected,readToday());
+  const lines=[[dateLabel,fmt(canCorrect?selected:event.date)]];
   if(event.type==='up'){
     if(event.endDate){
       const final=R.at(raw,event.endDate)||event;
@@ -455,7 +473,7 @@ function detail(id){
   }
   lines.push(['AI 分析',raw.aiIncluded?'单项开关已开启':'单项开关已关闭'],['备注',event.note||'未填写']);
   const planned=R.occurrence(raw,selected);
-  const status=!planned?'当天没有归零计划':selected<today?'已发生 · 历史日程已保留':'进入次日后自动计入统计';
+  const status=!planned?'当天没有归零计划':selected<today?(canCorrect?'已发生 · 本次记录可补改或删除':'已发生 · 历史日程已保留'):'进入次日后自动计入统计';
   const stopAction=R.canEndCountup(raw,selected,today)
     ?'<button class="stop-countup" data-action="stop-countup">结束正计时</button>'
     :'';

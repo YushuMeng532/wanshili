@@ -221,12 +221,19 @@ function actionDate(event,day){
   const value=resolve(event,day);
   return value?.type==='down'?nextTarget(value,day,event):day;
 }
+function canCorrectPast(event, day, today) {
+  if (!event || !day || day >= today) return false;
+  const value = occurrenceValue(event, day);
+  if (value?.type !== 'normal') return false;
+  const base = segmentValue(event, day);
+  return [value, base].some(plan => plan?.type === 'normal' && plan.recurrence?.frequency && plan.recurrence.frequency !== 'once');
+}
 function deletionScopes(event, day, today) {
   const value = shown(event, day);
   if (value?.type === 'up') return { series: true };
   if (!value) return {};
   const target = actionDate(event, day);
-  const one = Boolean(target && target >= today && occurrenceValue(event, target));
+  const one = Boolean(target && (target >= today || canCorrectPast(event, target, today)) && occurrenceValue(event, target));
   if (standaloneCountdown(value)) return { one };
   const first = nextScheduled(event, today);
   const following = day <= today ? first : nextScheduled(event, day);
@@ -270,11 +277,18 @@ function rewrite(e,value,scope,day,today){
     day=actionDate(e,day);
   }
   if(scope==='one'){
-    if(!day||day<today)throw Error('过去的日程已发生并保留，请选择今天或未来日期。');
+    const correction=canCorrectPast(e,day,today);
+    if(!day||(day<today&&!correction))throw Error('这项历史日程不能单次修改或删除。');
+    const moved=value&&value.date!==(correction?day:source?.date);
+    if(correction&&value){
+      if(!validDay(value.date)||leapDay(value.date))throw Error('请选择有效日期，2月29日不生成事项。');
+      if(value.date!==day&&occurrenceValue(e,value.date))throw Error('新日期已有同系列日程，请选择其他日期。');
+      value={...source,title:value.title,note:value.note,date:value.date===day?source.date:value.date};
+    }
     e.exceptions??={};
     if(!value)e.exceptions[day]={cancelled:true,deleted:true};
-    else if(value.date!==at(e,day)?.date){
-      if(value.date<today)throw Error('移动后的日期不能早于今天。');
+    else if(moved){
+      if(value.date<today&&!correction)throw Error('移动后的日期不能早于今天。');
       if(leapDay(value.date))throw Error('2月29日不生成事项。');
       e.exceptions[day]={cancelled:true,moved:true};
       e.exceptions[value.date]={override:config(value),forceOccurrence:true};
@@ -349,5 +363,5 @@ function summary(events,days,today,include=null){
   return {total:[...total].sort(),byType:ordered(byType),byEvent:ordered(byEvent),details};
 }
 function normalize(e){if(e.type==='up'){e.recurrence={frequency:'none',weekdays:[]};e.endCondition=null;e.calendarType='solar'}else if(e.recurrence?.frequency==='once')e.endCondition=1;return e}
-root.WanshiliRules={stamp,iso,diff,leapDay,weekday,isWorkday,at,shown,marked,occurrence,label,rewrite,summary,normalize,config,deletionScopes,countupDays,canEndCountup,endCountup,addDays,validDay,statsRange,datesInRange,actionDate,remainingCount,standaloneCountdown};
+root.WanshiliRules={stamp,iso,diff,leapDay,weekday,isWorkday,at,shown,marked,occurrence,label,rewrite,summary,normalize,config,canCorrectPast,deletionScopes,countupDays,canEndCountup,endCountup,addDays,validDay,statsRange,datesInRange,actionDate,remainingCount,standaloneCountdown};
 })(typeof window==='object'?window:globalThis);
