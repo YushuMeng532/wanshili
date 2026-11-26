@@ -140,28 +140,15 @@
       }
     }
 
-    function voice(text = '') {
+    function attachDictation(panel, limit, resultMessage) {
       const Speech = window.SpeechRecognition || window.webkitSpeechRecognition;
-      const panel = show('AI 录入日程',
-        '<form class="ai-live-form" id="voice-ai-form"><label for="ai-calendar-text">你想安排什么？</label>' +
-        '<textarea id="ai-calendar-text" rows="4" maxlength="280" placeholder="例如：明天交报告" required></textarea>' +
-        '<p>' + (Speech ? '可以点「开始听写」用语音，也可以直接输入。点「解析日程」会将确认后的文字、当前日期和时区发送给 AI 助手。' : '本机浏览器不支持网页语音识别，请用键盘自带的麦克风听写：点输入框 → 键盘上的 🎤 键 → 说出内容。点「解析日程」会将确认后的文字、当前日期和时区发送给 AI 助手。') + '</p>' +
-        '<div class="ai-listening" data-ai-listening hidden aria-hidden="true"><span class="ai-wave">' +
-        '<i></i><i></i><i></i><i></i><i></i></span></div>' +
-        '<p role="status" aria-live="polite" data-ai-status></p><div class="sub-actions">' +
-        (Speech ? '<button type="button" data-speak>开始听写</button>' : '') +
-        '<button type="button" data-ai-check>检查连接</button>' +
-        '<button class="primary" type="submit">解析日程</button></div></form>');
       const input = panel.querySelector('textarea');
       const submit = panel.querySelector('[type="submit"]');
-      const status = panel.querySelector('[data-ai-status]');
+      const status = panel.querySelector('[role="status"]');
       const speak = panel.querySelector('[data-speak]');
       const connectionCheck = panel.querySelector('[data-ai-check]');
-      connectionCheck.onclick = () => {
-        if (!recognition) checkConnection(connectionCheck, status);
-      };
-      input.value = text;
-      if (speak) speak.onclick = () => {
+      if (!speak || !Speech) return;
+      speak.onclick = () => {
         if (recognition || pending) return;
         const wave = panel.querySelector('[data-ai-listening]');
         const noSpeech = '没听到语音。可以重新听写，或直接输入。';
@@ -190,13 +177,14 @@
           clearTimeout(timer);
           recognition = undefined;
           wave.hidden = true;
-          speak.disabled = submit.disabled = connectionCheck.disabled = false;
+          speak.disabled = submit.disabled = false;
+          if (connectionCheck) connectionCheck.disabled = false;
           input.readOnly = false;
           if (message) {
             status.textContent = message;
           } else if (transcript) {
-            input.value = transcript.slice(0, 280);
-            status.textContent = '请核对听写文字，再解析日程。';
+            input.value = transcript.slice(0, limit);
+            status.textContent = resultMessage;
           } else {
             status.textContent = noSpeech;
           }
@@ -217,7 +205,8 @@
           catch { work.cancel(); }
         }
 
-        speak.disabled = submit.disabled = connectionCheck.disabled = true;
+        speak.disabled = submit.disabled = true;
+        if (connectionCheck) connectionCheck.disabled = true;
         input.readOnly = true;
         status.textContent = '正在开启麦克风…';
         arm(() => work.cancel('麦克风启动超时，可以检查权限后重试。'), 15000);
@@ -247,6 +236,29 @@
         try { session.start(); }
         catch { work.cancel('听写暂不可用，可以直接输入。'); }
       };
+    }
+
+    function voice(text = '') {
+      const Speech = window.SpeechRecognition || window.webkitSpeechRecognition;
+      const panel = show('AI 录入日程',
+        '<form class="ai-live-form" id="voice-ai-form"><label for="ai-calendar-text">你想安排什么？</label>' +
+        '<textarea id="ai-calendar-text" rows="4" maxlength="280" placeholder="例如：明天交报告" required></textarea>' +
+        '<p>' + (Speech ? '可以点「开始听写」用语音，也可以直接输入。点「解析日程」会将确认后的文字、当前日期和时区发送给 AI 助手。' : '本机浏览器不支持网页语音识别，请用键盘自带的麦克风听写：点输入框 → 键盘上的 🎤 键 → 说出内容。点「解析日程」会将确认后的文字、当前日期和时区发送给 AI 助手。') + '</p>' +
+        '<div class="ai-listening" data-ai-listening hidden aria-hidden="true"><span class="ai-wave">' +
+        '<i></i><i></i><i></i><i></i><i></i></span></div>' +
+        '<p role="status" aria-live="polite" data-ai-status></p><div class="sub-actions">' +
+        (Speech ? '<button type="button" data-speak>开始听写</button>' : '') +
+        '<button type="button" data-ai-check>检查连接</button>' +
+        '<button class="primary" type="submit">解析日程</button></div></form>');
+      const input = panel.querySelector('textarea');
+      const submit = panel.querySelector('[type="submit"]');
+      const status = panel.querySelector('[data-ai-status]');
+      const connectionCheck = panel.querySelector('[data-ai-check]');
+      connectionCheck.onclick = () => {
+        if (!recognition) checkConnection(connectionCheck, status);
+      };
+      input.value = text;
+      attachDictation(panel, 280, '请核对听写文字，再解析日程。');
 
       panel.querySelector('form').addEventListener('submit', async event => {
         event.preventDefault();
@@ -370,6 +382,6 @@
       }
     }
 
-    return { enabled: Boolean(endpoint), voice, habit, remind, privacy, recheck, diary, diaryAvailable };
+    return { enabled: Boolean(endpoint), voice, habit, remind, privacy, recheck, diary, diaryAvailable, attachDictation };
   };
 })();

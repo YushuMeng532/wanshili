@@ -705,17 +705,18 @@ const diary=window.WanshiliDiary({
     if(innerWidth<=700)openDayPanel();
     else document.querySelector('[data-action="open-diary"]')?.focus();
   },
-  read:readDiary,refresh:refreshData,
-  save:(day,text,version)=>transaction(data=>{
+  read:readDiary,
+  save:(day,text,version,references)=>transaction(data=>{
     const current=data.diaries?.[day];
     if((current?.version??null)!==version)throw Error('这篇日记已在另一个标签页更新。请先复制当前文字，再重新打开。');
     data.diaries??={};
     if(text===null)delete data.diaries[day];
-    else data.diaries[day]={text,version:uid()};
+    else data.diaries[day]={text,references,version:uid()};
   }),
-  schedules:day=>app.events.map(event=>R.occurrence(event,day)).filter(Boolean),
+  schedules:day=>app.events.map(event=>R.occurrence(event,day)).filter(Boolean)
+    .map(({id,title,type})=>({id,title,category:types[type]})),
   fmt,icon,escape:esc,validDay:R.validDay,ai:aiClient.enabled?aiClient.diary:null,
-  aiAvailable:aiClient.diaryAvailable,notify
+  aiAvailable:aiClient.diaryAvailable,attachDictation:aiClient.attachDictation,notify
 });
 window.addEventListener('pageshow',maybeHabitReminder);
 document.addEventListener('visibilitychange',maybeHabitReminder);
