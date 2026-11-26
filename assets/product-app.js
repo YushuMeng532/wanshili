@@ -70,7 +70,7 @@ function calendar(){const y=view.getFullYear(),m=view.getMonth(),first=new Date(
  const list=occurrences(selected),d=date(selected);$('page-content').innerHTML='<div class="calendar-layout"><div><section class="calendar-panel" aria-label="月历"><div class="calendar-toolbar"><div class="month-heading"><h2>'+y+'年'+(m+1)+'月</h2><p>MONTHLY CALENDAR</p></div>'+monthControls()+'</div><div class="weekday-grid">'+['一','二','三','四','五','六','日'].map(x=>'<span>'+x+'</span>').join('')+'</div><div class="month-grid">'+cells+'</div><div class="calendar-legend"><span><i class="legend-line"></i>正计时</span><span><i class="legend-line down"></i>倒数日</span><span><i class="legend-line birthday"></i>生日</span><span><i class="legend-line normal"></i>普通日程</span></div></section><p class="demo-note">'+(app.sampleData?'当前含示例事项，可自由新增或修改。':'')+'日历标记计划日和正计时起止日。下方天数跟随选中日期。</p></div><section class="day-panel" aria-label="当天事项"><header class="day-panel-header"><div><h2>'+(d.getMonth()+1)+'月'+d.getDate()+'日</h2><small>周'+['一','二','三','四','五','六','日'][weekday(selected)-1]+(selected===today?' · 今天':'')+'</small></div><span class="day-count">共'+list.length+'项</span></header><div class="event-list">'+(list.length?list.map(e=>{const status=selected<today&&R.occurrence(app.events.find(x=>x.id===e.id),selected)?'occurred':'';return '<button class="event-row" data-event="'+esc(e.id)+'"><span class="event-icon '+e.type+'">'+icon(typeIcon[e.type])+'</span><span class="event-row-main"><strong>'+esc(e.title)+'</strong><small>'+[types[e.type],R.label(e,selected,app.events.find(x=>x.id===e.id))].filter(Boolean).join(' · ')+'</small></span><span class="record-dot '+(status||'')+'" aria-label="'+({occurred:'已发生',not_occurred:'未发生'}[status]||'未到发生日')+'">'+(status==='occurred'?'✓':'')+'</span></button>'}).join(''):empty())+'</div><button class="primary day-add" data-action="create">'+icon('plus')+'添加事项</button></section></div>'}
 function recurrenceLabel(e){const r=e.recurrence;if(e.type==='up')return '纪念日 · 按自然日累计';return {once:'仅一次',daily:'每天',weekly:'每周'+(r.weekdays||[]).map(n=>'一二三四五六日'[n-1]).join('、'),monthly:(r.monthDay||date(e.date).getDate())===31?'每月最后一天':'每月'+(r.monthDay||date(e.date).getDate())+'日',yearly:'每年'+((r.yearMonth??date(e.date).getMonth())+1)+'月'+(r.yearDay||date(e.date).getDate())+'日',workdays:'仅工作日',weekends:'仅周末'}[r.frequency]||'仅一次'}
 const statTypes=['normal','down','up','birthday'];
-const rangeLabels={week:'本周',month:'本月',custom:'指定日期范围'};
+const rangeLabels={month:'本月',week:'本周',custom:'自定义'};
 const modeLabels={category:'按类别',event:'按日程'};
 const rangeText=({start,end})=>start===end?fmt(start):fmt(start)+' – '+fmt(end);
 let lastStats;
@@ -88,7 +88,8 @@ function statsSummary(counted){
   return result;
 }
 function statsButton(label,attribute,value,selected){
-  return '<button type="button" '+attribute+'="'+value+'" aria-pressed="'+selected+'">'+label+'</button>';
+  const opensPicker=attribute==='data-stats-period'&&value==='custom';
+  return '<button type="button" '+attribute+'="'+value+'" aria-pressed="'+selected+'"'+(opensPicker?' aria-haspopup="dialog" aria-controls="sub-dialog"':'')+'>'+label+'</button>';
 }
 function statsRow(label,detail,type,count,route){
   return '<button type="button" class="stats-result" '+route+'><span class="event-icon '+type+'">'+icon(typeIcon[type])+'</span><span class="stats-name"><strong>'+esc(label)+'</strong>'+(detail?'<small>'+esc(detail)+'</small>':'')+'</span><b>'+count+' 天</b>'+icon('right')+'</button>';
@@ -128,7 +129,7 @@ function stats(){
     const countedDays=id?(category?[...(entry?.days||[])].sort():s.byEvent[id]||[]):category?s.byType[category]:s.total;
     const title=entry?.last?.value.title||(category?types[category]:'计入的日期');
     const empty='<p class="stats-empty">该范围内没有已发生的日程。</p>';
-    html+='<section class="stats-panel"><button type="button" class="text-button stats-back" data-action="stats-back">'+icon('left')+' 返回</button><h2 id="stats-detail-title" tabindex="-1">'+esc(title)+'</h2><p>'+rangeText(chosen)+' · '+countedDays.length+' 天</p>';
+    html+='<section class="stats-panel"><button type="button" class="text-button stats-back" data-action="stats-back">'+icon('left')+' 返回</button><h2 id="stats-detail-title" tabindex="-1">'+esc(title)+'</h2><p class="stats-detail-meta">'+rangeText(chosen)+' · '+countedDays.length+' 天</p>';
     if(category&&!id)html+=statEventRows(s,category)||empty;
     else html+=countedDays.length?'<h3>计入的日期</h3><div class="date-list">'+countedDays.map(day=>'<button type="button" data-summary-date="'+day+'">'+fmt(day)+'</button>').join('')+'</div>':empty;
     $('page-content').innerHTML=html+'</section></div>';
@@ -136,15 +137,15 @@ function stats(){
   }
   const categoryRows=statTypes.map(type=>statsRow(types[type],'',type,s.byType[type].length,'data-stats-category="'+type+'"')).join('');
   const rows=statsMode==='category'?categoryRows:statEventRows(s,null);
-  html+='<section class="stats-range" aria-label="统计范围"><div class="stats-filters" role="group" aria-label="日期范围">'+Object.entries(rangeLabels).map(([value,label])=>statsButton(label,'data-stats-period',value,statsPeriod===value)).join('')+'</div><p class="stats-selected">'+rangeText(chosen)+'</p><p class="stats-counted">'+(hasPast?'计入范围 · '+rangeText(counted):'今天及未来还未计入')+'</p></section>';
-  html+='<button class="stats-overview" data-action="stats-total"><span><strong>有日程的天数</strong><b>'+s.total.length+' <small>天</small></b></span><span class="stats-counted">同一天有多项日程只计 1 天</span></button>';
-  html+='<section class="stats-panel"><div class="stats-filters" role="group" aria-label="统计方式">'+Object.entries(modeLabels).map(([value,label])=>statsButton(label,'data-stats-mode',value,statsMode===value)).join('')+'</div>'+(s.total.length?'':'<p class="stats-empty">'+(hasPast?'这段时间还没有已发生的日程。':'本范围暂计 0 天。')+'</p>')+rows+'</section>';
+  html+='<section class="stats-panel stats-range" aria-label="统计范围"><div class="stats-filters stats-periods" role="group" aria-label="日期范围">'+Object.entries(rangeLabels).map(([value,label])=>statsButton(label,'data-stats-period',value,statsPeriod===value)).join('')+'</div><p class="stats-selected">'+rangeText(chosen)+'</p><p class="stats-counted">'+(hasPast?'计入范围 · '+rangeText(counted):'今天及未来还未计入')+'</p>';
+  html+='<button type="button" class="stats-overview" data-action="stats-total"><span><strong>有日程的天数</strong><small>同一天有多项日程只计 1 天</small></span><b>'+s.total.length+' <span>天</span></b>'+icon('right')+'</button></section>';
+  html+='<section class="stats-panel"><div class="stats-filters stats-modes" role="group" aria-label="统计方式">'+Object.entries(modeLabels).map(([value,label])=>statsButton(label,'data-stats-mode',value,statsMode===value)).join('')+'</div>'+(s.total.length?'':'<p class="stats-empty">'+(hasPast?'这段时间还没有已发生的日程。':'本范围暂计 0 天。')+'</p>')+rows+'</section>';
   html+=habitRow();
   $('page-content').innerHTML=html+'</div>';
 }
 function statsPicker(){
   const {start,end}=customRange||R.statsRange(statsPeriod,today,customRange);
-  sub('指定日期范围','<form id="stats-range-form" novalidate><div class="stats-date-fields"><div><label for="stats-start">开始日期</label><input type="date" id="stats-start" min="0001-01-01" max="9999-12-31" value="'+start+'" aria-describedby="stats-range-error" required></div><div><label for="stats-end">结束日期</label><input type="date" id="stats-end" min="0001-01-01" max="9999-12-31" value="'+end+'" aria-describedby="stats-range-error" required></div></div><p>开始日和结束日都会计入范围。</p><p id="stats-range-error" class="save-error" role="alert" hidden></p><div class="sub-actions"><button type="button" data-action="close-sub">取消</button><button type="submit" class="primary">应用</button></div></form>');
+  sub('指定日期范围','<form id="stats-range-form" novalidate><div class="stats-date-fields"><div><label for="stats-start">开始日期</label><input type="date" id="stats-start" min="0001-01-01" max="9999-12-31" value="'+start+'" aria-describedby="stats-range-error" required></div><div><label for="stats-end">结束日期</label><input type="date" id="stats-end" min="0001-01-01" max="9999-12-31" value="'+end+'" aria-describedby="stats-range-error" required></div></div><p id="stats-range-error" class="save-error" role="alert" hidden></p><div class="sub-actions"><button type="button" data-action="close-sub">取消</button><button type="submit" class="primary">应用</button></div></form>');
 }
 function applyStatsRange(){
   const start=$('stats-start'),end=$('stats-end');
@@ -160,7 +161,7 @@ function applyStatsRange(){
   customRange={start:start.value,end:end.value};
   statsPeriod='custom';
   statsDetail=null;
-  closeModal($('sub-dialog'));
+  $('sub-dialog').close();
   render();
   document.querySelector('[data-stats-period="custom"]').focus();
 }
