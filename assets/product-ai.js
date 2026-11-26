@@ -41,7 +41,9 @@
       pending = undefined;
       recognition?.cancel();
     }
-    dialog.addEventListener('close', cancelWork);
+    dialog.addEventListener('close', () => {
+      if (!dialog.open) cancelWork();
+    });
     document.addEventListener('visibilitychange', () => {
       if (document.hidden) recognition?.cancel('听写已停止。可以再试，或直接输入。');
     });
@@ -353,6 +355,21 @@
           habitSnapshot(activeHabit.month).revision !== activeHabit.revision) habit(activeHabit.month);
     }
 
-    return { enabled: Boolean(endpoint), voice, habit, remind, privacy, recheck };
+    function diary(mode, text, day, panel, submit, status) {
+      return call('/api/diary', { mode, text, day, today: readToday() }, panel, submit, status);
+    }
+
+    async function diaryAvailable() {
+      try {
+        const response = await fetch(endpoint + '/api/diary', {
+          cache: 'no-store', credentials: 'omit', signal: AbortSignal.timeout(3500)
+        });
+        return response.ok && (await response.json()).available === true;
+      } catch {
+        return false;
+      }
+    }
+
+    return { enabled: Boolean(endpoint), voice, habit, remind, privacy, recheck, diary, diaryAvailable };
   };
 })();

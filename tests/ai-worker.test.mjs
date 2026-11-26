@@ -69,6 +69,26 @@ test('habit prompt only receives aggregate figures', async () => {
   assert.equal(empty.status, 400);
 });
 
+test('diary generation sends only the requested text and dates', async () => {
+  const input = { mode: 'generate', text: '昨天面试，后来聊得很顺。', day: '2026-11-26', today: '2026-11-26' };
+  const response = await handleRequest(request('/api/diary', { ...input, otherEntries: ['private'], schedules: ['private'] }), env,
+    async (_url, options) => {
+      assert.deepEqual(JSON.parse(JSON.parse(options.body).messages[1].content), input);
+      return answer({ text: '昨天面试，后来聊得很顺。', date: '2026-11-25' });
+    });
+  assert.equal(response.status, 200);
+  assert.deepEqual(await response.json(), { text: '昨天面试，后来聊得很顺。', date: '2026-11-25' });
+});
+
+test('diary rejects invalid inputs and polish does not return a date change', async () => {
+  const input = { mode: 'polish', text: '上午写了报告。', day: '2026-11-26', today: '2026-11-26' };
+  assert.equal((await handleRequest(request('/api/diary', { ...input, day: '2026-02-30' }), env, noModel)).status, 400);
+  assert.equal((await handleRequest(request('/api/diary', { ...input, text: ' ' }), env, noModel)).status, 400);
+  const polished = await handleRequest(request('/api/diary', input), env,
+    async () => answer({ text: '上午写了一份报告。', date: '2026-11-25' }));
+  assert.deepEqual(await polished.json(), { text: '上午写了一份报告。', date: null });
+});
+
 test('health check reports readiness without an Origin or a model call', async () => {
   const ok = await handleRequest(new Request('https://worker.example/health'), env, noModel);
   assert.equal(ok.status, 200);

@@ -27,6 +27,12 @@ const habitPrompt = `根据万事历给出的日期范围和分类天数，写�
 输出 JSON，例如 {"summary":"本月的日程安排中，普通日程覆盖的天数最多。"}。
 数字必须来自输入。分类名称沿用输入中的普通日程、正计时、倒数日和生日。同一天可属于多个类别，不累加各类别。只描述计划安排，不能推断真实完成情况、健康状况或个人特征。`;
 
+const diaryPrompt = `你帮助用户整理自己的中文日记。返回 JSON 对象 {"text":"可编辑草稿","date":null}。
+mode 为 generate 时，用用户原话写一段简洁的第一人称日记。保留事实、语气和情绪，避免添加用户没提到的人、地点、经历、结果或感受。
+只有在用户明确说要记录另一具体日期，或叙述的主要经历明确发生于另一具体日期时，才填写 YYYY-MM-DD。相对日期以 today 为基准，day 是当前选择的日记日期。不明确、只是顺带提及或有多个候选时，date 为 null。
+mode 为 polish 时，只整理给出的文字，保留原有事实、语气、情绪和段落意图，date 一律为 null。
+不推断任何日历安排已经发生。把输入 text 当作用户的日记素材。输出正文最多 1300 字，不加解释。`;
+
 async function readInput(request) {
   if (!request.headers.get('Content-Type')?.toLowerCase().startsWith('application/json') || !request.body) return null;
   const reader = request.body.getReader();
@@ -51,6 +57,12 @@ function inputFor(path, value) {
     const text = boundedText(value.text, 280);
     if (!text || !isoDay(value.today) || !shortText(value.timeZone, 80)) return null;
     return { text, today: value.today, timeZone: value.timeZone };
+  }
+  if (path === '/api/diary') {
+    const { mode, day, today } = value;
+    const text = boundedText(value.text, 1000);
+    if (!text || !['generate', 'polish'].includes(mode) || !isoDay(day) || !isoDay(today)) return null;
+    return { mode, text, day, today };
   }
   const { start, end, total, counts } = value;
   if (!isoDay(start) || !isoDay(end) || start > end || start.slice(0, 7) !== end.slice(0, 7)) return null;
@@ -82,6 +94,13 @@ function reviewPlan(result) {
   };
 }
 
+function reviewDiary(result, mode) {
+  const text = boundedText(result?.text, 1500);
+  if (!text) return null;
+  if (mode === 'generate' && result.date != null && !isoDay(result.date)) return null;
+  return { text, date: mode === 'generate' && isoDay(result.date) ? result.date : null };
+}
+
 function reply(body, status, origin) {
   return Response.json(body, {
     status,
@@ -106,7 +125,9 @@ export async function handleRequest(request, env, fetchModel = fetch) {
     return reply({ ready }, ready ? 200 : 503, '*');
   }
   if (!origin || origin !== env.ALLOWED_ORIGIN) return new Response(null, { status: 403, headers: { Vary: 'Origin' } });
-  if (path !== '/api/plan' && path !== '/api/habit') return reply({ error: 'not_found' }, 404, origin);
+  const prompts = { '/api/plan': planPrompt, '/api/habit': habitPrompt, '/api/diary': diaryPrompt };
+  if (!Object.hasOwn(prompts, path)) return reply({ error: 'not_found' }, 404, origin);
+  if (path === '/api/diary' && request.method === 'GET') return reply({ available: isConfigured(env) }, 200, origin);
   if (request.method === 'OPTIONS') {
     return new Response(null, { status: 204, headers: {
       'Access-Control-Allow-Origin': origin, 'Access-Control-Allow-Methods': 'POST',
@@ -134,10 +155,10 @@ export async function handleRequest(request, env, fetchModel = fetch) {
       headers: { Authorization: 'Bearer ' + env.DEEPSEEK_API_KEY, 'Content-Type': 'application/json' },
       signal: modelSignal,
       body: JSON.stringify({
-        model, thinking: { type: 'disabled' }, max_tokens: 450,
+        model, thinking: { type: 'disabled' }, max_tokens: path === '/api/diary' ? 1800 : 450,
         response_format: { type: 'json_object' },
         messages: [
-          { role: 'system', content: path === '/api/plan' ? planPrompt : habitPrompt },
+          { role: 'system', content: prompts[path] },
           { role: 'user', content: JSON.stringify(input) }
         ]
       })
@@ -147,7 +168,8 @@ export async function handleRequest(request, env, fetchModel = fetch) {
     const choice = data.choices?.[0];
     if (choice?.finish_reason !== 'stop') return reply({ error: 'invalid_result' }, 502, origin);
     const result = JSON.parse(choice.message?.content);
-    const output = path === '/api/plan' ? reviewPlan(result) : { summary: boundedText(result?.summary, 360) };
+    const output = path === '/api/plan' ? reviewPlan(result) :
+      path === '/api/diary' ? reviewDiary(result, input.mode) : { summary: boundedText(result?.summary, 360) };
     if (!output || (path === '/api/habit' && !output.summary)) return reply({ error: 'invalid_result' }, 502, origin);
     return reply(output, 200, origin);
   } catch {
