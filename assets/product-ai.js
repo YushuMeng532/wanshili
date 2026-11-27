@@ -268,7 +268,7 @@
         const args = { text, today, timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC' };
         const raw = await call('/api/plan', args, panel, submit, status);
         if (!raw) return;
-        const result = window.WanshiliScheduleIntent.refinePlan(raw, args);
+        const result = raw.intentVersion === 2 ? raw : window.WanshiliScheduleIntent.refinePlan(raw, args);
         if (today !== readToday() || input.value.trim() !== text) {
           status.textContent = '日期或文字已变化，请再次解析。';
           return;

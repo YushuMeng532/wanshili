@@ -152,3 +152,36 @@ test('global counter stops at the configured daily cap', () => {
   entry = { day: 'earlier-date', used: 2 };
   assert.equal(reserve(), 204);
 });
+
+test('the schedule parser keeps model intent even when the title suggests a different type', async () => {
+  const input = { ...validPlan, text: '想知道离结婚纪念日还有多久，下周三就是那天' };
+  const response = await handleRequest(request('/api/plan', input), env, async (_url, options) => {
+    const messages = JSON.parse(options.body).messages;
+    assert.match(messages[0].content, /理解整句话/);
+    assert.equal(JSON.parse(messages[1].content).text, input.text);
+    return answer({ action: 'create', title: '结婚纪念日', type: 'down', dateMode: 'exact', date: '2026-11-25', repeat: 'once' });
+  });
+  const plan = await response.json();
+  assert.deepEqual([plan.intentVersion, plan.type, plan.date], [2, 'down', '2026-11-25']);
+});
+
+test('the schedule parser validates a recurrence anchor and preserves targeted model questions', async () => {
+  const input = { ...validPlan, text: '以后要去公司的日子都记一条' };
+  const response = await handleRequest(request('/api/plan', input), env, async () =>
+    answer({ action: 'create', title: '去公司', type: 'normal', repeat: 'workdays', dateMode: 'firstEligible' }));
+  const plan = await response.json();
+  assert.deepEqual([plan.intentVersion, plan.repeat, plan.date, plan.nextEligible], [2, 'workdays', input.today, true]);
+
+  const monthly = await handleRequest(request('/api/plan', input), env, async () =>
+    answer({ action: 'create', title: '复盘', type: 'normal', repeat: 'monthly', dateMode: 'firstEligible', monthDay: 31 }));
+  assert.equal((await monthly.json()).monthDay, 31);
+
+  const unavailable = await handleRequest(request('/api/plan', input), env, async () =>
+    answer({ action: 'create', title: '复盘', type: 'normal', repeat: 'monthly', dateMode: 'firstEligible', monthDay: 32 }));
+  assert.equal((await unavailable.json()).action, 'clarify');
+
+  const needsDate = { action: 'clarify', message: '你们是哪天搬进去的？' };
+  const question = await handleRequest(request('/api/plan', { ...input, text: '我想知道我们搬进这个家已经多久了' }), env,
+    async () => answer(needsDate));
+  assert.deepEqual(await question.json(), { ...needsDate, intentVersion: 2 });
+});
