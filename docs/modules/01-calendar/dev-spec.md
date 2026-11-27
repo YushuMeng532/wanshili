@@ -11,10 +11,13 @@
 | `app.html`、`assets/product-app.js`、`assets/product-app.css` | 独立产品前端 |
 | `assets/product-storage.js` | 浏览器数据迁移、事务与备份导出 |
 | `assets/event-rules.js` | 选中日计算、计划实例、标记/列表分离、范围操作与统计的公共规则 |
+| `assets/festivals.js`、`assets/solar-terms.js` | 节日和节气标记，与个人事项及调休数据分开 |
 | `index.html`、`assets/event-flow.js`、`assets/web-demo.js` | 工作台原型、交互、批注和文档定位 |
 | `wanshili-annotations.json` | 页面锚点与文档章节绑定 |
 
 浏览器本地保存支持公历和农历生日。农历换算由 `assets/lunar.js` 提供，数据表覆盖农历 1900 年至 2100 年。
+
+`assets/solar-terms.js` 保存北京时间的节气日期，每年按 1 至 12 月顺序保存 24 个日号。清明节使用同一份数据，月历和当天面板只渲染一条。节气查询根据公历日期读取本地数据，无需网络请求。
 
 ## 2. 数据与唯一性
 <!-- chapter-id: data -->
