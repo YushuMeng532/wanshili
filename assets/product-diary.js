@@ -157,7 +157,7 @@
         '</label><textarea id="diary-ai-source" maxlength="' + Math.max(aiLimit, input.length) + '" rows="4"' +
         (polish ? ' readonly' : '') + ' required>' + escape(input) + '</textarea>' +
         (speak ? '<div class="ai-listening" data-ai-listening hidden aria-hidden="true"><span class="ai-wave"><i></i><i></i><i></i><i></i><i></i></span></div>' : '') +
-        '<p>' + (organize ? '点「整理日记」会把核对后的文字发送给 DeepSeek。' : 'AI 整理暂不可用。可以用键盘麦克风听写，或直接输入文字。') +
+        '<p>' + (organize ? '点「整理日记」会把核对后的文字发送给AI助手。' : 'AI 整理暂不可用。可以用键盘麦克风听写，或直接输入文字。') +
         '</p><p class="diary-status" role="status"></p><div class="sub-actions">' +
         (speak ? '<button type="button" data-speak>开始听写</button>' : '<button type="button" data-action="close-sub">取消</button>') +
         '<button type="submit" class="primary">' + (organize ? '整理日记' : '使用文字') + '</button></div></form>');

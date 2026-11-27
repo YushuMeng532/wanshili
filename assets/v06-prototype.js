@@ -188,7 +188,7 @@
 
   }
 
-  const scenesReady=fetch(new URL('assets/v06-scenes.json?v=1',location.href))
+  const scenesReady=fetch(new URL('assets/v06-scenes.json?v=2',location.href))
     .then(response => {
       if (!response.ok) throw new Error('V0.6 prototype fetch failed');
       return response.json();
