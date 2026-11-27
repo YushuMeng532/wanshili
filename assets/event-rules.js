@@ -28,8 +28,20 @@ function isWorkday(day){
   if(h.offDays&&h.offDays.includes(day))return false;
   return weekday(day)<=5;
 }
+function lunarBirthdayDate(event, year) {
+  const lunar = event.lunar;
+  const calendar = root.WanshiliLunar;
+  if (event.type !== 'birthday' || !lunar || !calendar) return null;
+  const leap = lunar.leap === true && calendar.leapMonth(year) === lunar.month;
+  return calendar.lunarToSolar(year, lunar.month, lunar.day, leap);
+}
 function matches(e,day){
-  if(!e||leapDay(day)||e.calendarType==='lunar'||day<e.date)return false;
+  if(!e||day<e.date)return false;
+  if(e.calendarType==='lunar'){
+    const year=Number(day.slice(0,4));
+    return lunarBirthdayDate(e,year)===day||lunarBirthdayDate(e,year-1)===day;
+  }
+  if(leapDay(day))return false;
   if(e.type==='up')return !e.endDate||day<=e.endDate;
   const rule=e.recurrence||{frequency:'once'};
   switch(rule.frequency){
@@ -81,7 +93,19 @@ function leapCount(start,end,weekdays){
 }
 function scheduledCount(e,start,end){
   start=later(start,e.date);
-  if(start>end||e.calendarType==='lunar')return 0;
+  if(start>end)return 0;
+  if(e.calendarType==='lunar'){
+    const calendar=root.WanshiliLunar;
+    if(e.type!=='birthday'||!e.lunar||!calendar)return 0;
+    const first=Math.max(calendar.firstYear,Number(start.slice(0,4))-1);
+    const last=Math.min(calendar.lastYear,Number(end.slice(0,4)));
+    let count=0;
+    for(let year=first;year<=last;year++){
+      const day=lunarBirthdayDate(e,year);
+      if(day&&day>=start&&day<=end)count++;
+    }
+    return count;
+  }
   const rule=e.recurrence||{frequency:'once'};
   const span=diff(end,start)+1;
   if(e.type==='up'){
@@ -140,7 +164,10 @@ function occurrenceValue(e,day,ignoreException=false){
   if(!value)return null;
   const resolved=ignoreException&&value.type==='up'&&e.endDate?{...value,endDate:e.endDate}:value;
   if(!ignoreException&&value.type!=='up'&&e.exceptions?.[day]?.forceOccurrence){
-    return !leapDay(day)&&value.calendarType!=='lunar'?value:null;
+    const allowed=value.calendarType==='lunar'
+      ? value.type==='birthday'&&Boolean(root.WanshiliLunar?.solarToLunar(day))
+      : !leapDay(day);
+    return allowed?value:null;
   }
   return plannedValue(resolved,day)?resolved:null;
 }
@@ -168,6 +195,18 @@ function nextScheduled(event, day, type) {
     const limit = budget(value);
     const origin = value.limitFrom || value.date;
     if (limit !== Infinity && (!limit || (start > origin && scheduledCount(value, origin, addDays(start, -1)) >= limit))) continue;
+    if (value.calendarType === 'lunar') {
+      const calendar = root.WanshiliLunar;
+      if (!calendar || value.type !== 'birthday') continue;
+      const firstYear = Math.max(calendar.firstYear, Number(start.slice(0,4)) - 1);
+      for (let year = firstYear; year <= calendar.lastYear; year++) {
+        const date = lunarBirthdayDate(value, year);
+        if (!date || date < start) continue;
+        if ((segment.to && date >= segment.to) || (exception && date >= exception)) break;
+        if (isScheduled(date)) return date;
+      }
+      continue;
+    }
     const last = Math.min(stamp('9999-12-31'), stamp(start) + DAY * 366 * 8,
       segment.to ? stamp(segment.to) - DAY : Infinity, exception ? stamp(exception) - DAY : Infinity);
     for (let n = stamp(start); n <= last; n += DAY) {
@@ -203,7 +242,7 @@ function nextTarget(e, day, source) {
   }
   return null;
 }
-function shown(e,day){const value=at(e,day);if(!value||leapDay(day)||value.calendarType==='lunar')return null;if(value.type==='down')return nextTarget(value,day,e)?value:null;return occurrence(e,day)?value:null}
+function shown(e,day){const value=at(e,day);if(!value)return null;if(value.type==='down')return !leapDay(day)&&value.calendarType!=='lunar'&&nextTarget(value,day,e)?value:null;return occurrence(e,day)?value:null}
 function marked(e,day){const value=occurrence(e,day);return value&&(value.type!=='up'||day===value.date||day===value.endDate)?value:null}
 const countupDays=(event,day)=>diff(day,event.date)+1;
 function canEndCountup(event,day,today){
@@ -215,7 +254,13 @@ function endCountup(event,today){
   event.endDate=today;
   event.updatedAt=new Date().toISOString();
 }
-function label(e,selected,source){if(e.type==='up')return selected===e.endDate?'已结束 · 共 '+countupDays(e,selected)+' 天':'第'+countupDays(e,selected)+'天';if(e.type==='down'){const target=nextTarget(e,selected,source);if(!target||leapDay(target))return leapDay(e.date)?'2月29日暂不生成事项':'没有后续计划';const n=diff(target,selected);return n===0?'就是今天':n>0?'还有'+n+'天':'已过'+(-n)+'天'}return e.type==='birthday'?'每年纪念这一天':''}
+function label(e,selected,source){if(e.type==='up')return selected===e.endDate?'已结束 · 共 '+countupDays(e,selected)+' 天':'第'+countupDays(e,selected)+'天';if(e.type==='down'){const target=nextTarget(e,selected,source);if(!target||leapDay(target))return leapDay(e.date)?'2月29日暂不生成事项':'没有后续计划';const n=diff(target,selected);return n===0?'就是今天':n>0?'还有'+n+'天':'已过'+(-n)+'天'}if(e.type!=='birthday')return '';
+  if(e.calendarType==='lunar'&&e.lunar&&root.WanshiliLunar){
+    const date=root.WanshiliLunar.solarToLunar(selected);
+    if(date)return '农历'+date.monthName+date.dayName;
+  }
+  return '每年纪念这一天';
+}
 const standaloneCountdown=value=>value?.type==='down'&&value.recurrence?.frequency==='once';
 function actionDate(event,day){
   const value=resolve(event,day);
@@ -294,7 +339,7 @@ function rewrite(e,value,scope,day,today){
     if(!value)e.exceptions[day]={cancelled:true,deleted:true};
     else if(moved){
       if(value.date<today&&!correction)throw Error('移动后的日期不能早于今天。');
-      if(leapDay(value.date))throw Error('2月29日不生成事项。');
+      if(value.calendarType!=='lunar'&&leapDay(value.date))throw Error('2月29日不生成事项。');
       e.exceptions[day]={cancelled:true,moved:true};
       e.exceptions[value.date]={override:config(value),forceOccurrence:true};
     }else{
@@ -321,6 +366,7 @@ function rewrite(e,value,scope,day,today){
   if(future){
     delete e.limitFrom;
     delete e.limitUsed;
+    if(future.calendarType!=='lunar')delete e.lunar;
     Object.assign(e,future);
   }
   e.updatedAt=new Date().toISOString();
@@ -367,6 +413,12 @@ function summary(events,days,today,include=null){
   }
   return {total:[...total].sort(),byType:ordered(byType),byEvent:ordered(byEvent),details};
 }
-function normalize(e){if(e.type==='up'){e.recurrence={frequency:'none',weekdays:[]};e.endCondition=null;e.calendarType='solar'}else if(e.recurrence?.frequency==='once')e.endCondition=1;return e}
+function normalize(e){
+  if(e.type==='up'){e.recurrence={frequency:'none',weekdays:[]};e.endCondition=null;e.calendarType='solar'}
+  else if(e.type==='birthday'&&e.calendarType==='lunar')e.recurrence={frequency:'yearly',weekdays:[]};
+  else if(e.recurrence?.frequency==='once')e.endCondition=1;
+  if(e.calendarType!=='lunar')delete e.lunar;
+  return e;
+}
 root.WanshiliRules={stamp,iso,diff,leapDay,weekday,isWorkday,at,shown,marked,occurrence,label,rewrite,summary,normalize,config,canCorrectPast,deletionScopes,countupDays,canEndCountup,endCountup,addDays,validDay,statsRange,datesInRange,actionDate,remainingCount,standaloneCountdown};
 })(typeof window==='object'?window:globalThis);
