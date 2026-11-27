@@ -20,6 +20,7 @@
 | 入口 | 内容 |
 | --- | --- |
 | [PRD](docs/modules/01-calendar/prd.md) | 用户动作、产品行为与业务规则 |
+| [日历双入口与日记 PRD](docs/modules/02-diary/prd.md) | 日历入口、日记编辑与 AI 草稿 |
 | [Dev Spec](docs/modules/01-calendar/dev-spec.md) | 数据、计划计算、范围操作和保存 |
 | [页面设计](docs/modules/01-calendar/page-design.md) | 布局、状态与动效 |
 | [原型与流程](docs/modules/01-calendar/prototype.md) | 画框索引和交互入口 |
@@ -31,7 +32,7 @@
 
 ## 修改与运行
 
-分支修改 → 创建PR → 查看差异 → 合并 → GitHub Pages部署。业务规则变化同步PRD、Spec、页面设计和原型；验证记录只记录实际执行结果。
+分支修改 → 创建PR → 查看差异 → 合并 → GitHub Pages部署。业务规则变化同步需求与实现说明，是否绘制原型按[项目协作规则](AGENTS.md)执行。验证记录只记录实际执行结果。
 
 本地在仓库根目录运行 `python -m http.server 8765`，打开 `http://localhost:8765/` 或 `http://localhost:8765/app.html`。
 
