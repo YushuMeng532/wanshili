@@ -376,3 +376,33 @@ dialog{border:1px solid var(--line);box-shadow:0 24px 100px #26384226;padding:0;
 @media (max-width: 350px) {
   .diary-open .diary-tools svg { display: none; }
 }
+
+.day-festival {
+  display: block;
+  min-width: 0;
+  color: var(--blue);
+  font-size: 11px;
+  line-height: 1.25;
+  font-weight: var(--weight-emphasis);
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.day-festival.china { color: #934f63; }
+.day-festivals { display: flex; flex-wrap: wrap; gap: 8px; padding: 14px 0 2px; }
+.festival-detail {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 5px 9px;
+  border-radius: 8px;
+  background: var(--blue-soft);
+  color: var(--ink);
+  font-size: 12px;
+}
+.festival-detail.china { background: var(--pink-soft); }
+.festival-detail small { font-size: 11px; color: var(--muted); }
+@media (max-width: 700px) {
+  .day-festival { font-size: 10px; margin-block: -2px; }
+}
