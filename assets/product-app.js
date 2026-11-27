@@ -141,7 +141,6 @@ function stats(){
   html+='<section class="stats-panel stats-range" aria-label="统计范围"><div class="stats-filters stats-periods" role="group" aria-label="日期范围">'+Object.entries(rangeLabels).map(([value,label])=>statsButton(label,'data-stats-period',value,statsPeriod===value)).join('')+'</div><p class="stats-selected">'+rangeText(chosen)+'</p><p class="stats-counted">'+(hasPast?'计入范围 · '+rangeText(counted):'今天及未来还未计入')+'</p>';
   html+='<button type="button" class="stats-overview" data-action="stats-total"><span><strong>有日程的天数</strong><small>同一天有多项日程只计 1 天</small></span><b>'+s.total.length+' <span>天</span></b>'+icon('right')+'</button></section>';
   html+='<section class="stats-panel"><div class="stats-filters stats-modes" role="group" aria-label="统计方式">'+Object.entries(modeLabels).map(([value,label])=>statsButton(label,'data-stats-mode',value,statsMode===value)).join('')+'</div>'+(s.total.length?'':'<p class="stats-empty">'+(hasPast?'这段时间还没有已发生的日程。':'本范围暂计 0 天。')+'</p>')+rows+'</section>';
-  html+=habitRow();
   $('page-content').innerHTML=html+'</div>';
 }
 function statsPicker(){
@@ -172,19 +171,15 @@ function profileRow(symbol,label,description,route){
 function profileSwitch(id,title,hint,enabled,disabled=false){
   return '<label class="profile-toggle"><span><strong>'+title+'</strong><small>'+hint+'</small></span><span class="switch"><input type="checkbox" id="'+id+'" aria-label="'+title+'" '+(enabled?'checked ':'')+(disabled?'disabled':'')+'><span></span></span></label>';
 }
-function habitRow() {
-  return aiClient.enabled ? profileRow('sparkle','月度习惯回顾','查看已授权日程的天数和 AI 总结','data-ai="habit"') :
-    profileRow('sparkle','月度习惯回顾','查看自然月回顾示例','data-preview="habit"');
-}
 function settings(){
   const ai=app.settings.aiEnabled;
   $('page-content').innerHTML='<div class="profile-layout">'+
     profileRow('user',preview.signedIn?'演示账号':'登录或注册',preview.signedIn?'demo@example.com · 示例账号':'查看邮箱账号和同步流程示例','data-preview="login"')+
     profileRow('chart','统计','查看指定日期范围内的日程天数','data-page="stats"')+
     '<section class="settings-panel"><h2>AI 与提醒</h2>'+
-    profileSwitch('global-ai','AI 习惯分析','保存全局分析偏好，日程可以独立选择',ai)+
-    profileSwitch('month-reminder','月末回顾提醒',ai?'保存每月最后一天的提醒偏好':'开启 AI 习惯分析后可用',ai&&(app.settings.monthReminder??true),!ai)+
-    '<div class="profile-preview">'+(aiClient.enabled?habitRow():profileRow('sparkle','查看月末提醒示例','查看提醒和习惯总结的演示','data-preview="habit-reminder"'))+'</div></section>'+
+    profileSwitch('global-ai','AI 补记提示','可使用已授权的事项名称提供回想线索',ai)+
+    profileSwitch('month-reminder','月末提醒','每月最后一天提醒你回看日历和补记',app.settings.monthReminder??ai)+
+    '<div class="profile-preview">'+profileRow('sparkle','月末补记','回看月历，补记遗漏的日程','data-action="monthly-review"')+'</div></section>'+
     '<section class="settings-panel"><h2>数据与帮助</h2>'+profileRow('user','云同步','查看同步成功、失败和编辑冲突示例','data-preview="sync"')+profileRow('leaf','隐私说明','查看浏览器本机数据说明',(aiClient.enabled?'data-ai="privacy"':'data-preview="privacy"'))+
     '<p>日程和日记保存在当前浏览器。可以导出本机备份。</p>'+(storageIssue?'<p class="save-error">'+esc(storageIssue)+'</p>':'')+
     '<button class="settings-action" data-action="export-backup">导出本地备份</button>'+
@@ -273,34 +268,50 @@ async function openAIMatch(plan,item){
   if(plan.action==='cancel')confirmDelete();
   else if(plan.action==='end')confirmStop();
 }
-function habitSnapshot(month){
-  const actualToday=readToday(), current=R.statsRange('month',actualToday);
-  const yesterday=R.addDays(actualToday,-1);
-  const chosen=month==='previous'?R.statsRange('month',R.addDays(current.start,-1)):current;
-  const end=chosen.end<yesterday?chosen.end:yesterday;
-  const enabled=Boolean(app.settings.aiEnabled);
-  const result=R.summary(app.events,enabled?R.datesInRange(chosen.start,end):[],actualToday,(_value,event)=>event.aiIncluded===true);
-  return {enabled,start:chosen.start,end:end<chosen.start?chosen.start:end,total:result.total.length,
-    counts:Object.fromEntries(Object.entries(result.byType).map(([type,list])=>[type,list.length])),
-    revision:app.revision+'|'+actualToday};
+function monthlyReview(month){
+  const day=readToday(), current=R.statsRange('month',day);
+  const range=month==='previous'?R.statsRange('month',R.addDays(current.start,-1)):current;
+  const end=range.end<day?range.end:day;
+  const aiAllowed=Boolean(app.settings.aiEnabled&&aiClient.enabled);
+  const titles=new Set();
+  if(aiAllowed){
+    for(const event of app.events){
+      if(event.aiIncluded!==true)continue;
+      for(const date of R.datesInRange(range.start,end)){
+        const item=R.occurrence(event,date);
+        if(item?.type==='normal'&&item.title.trim())titles.add(item.title.trim().slice(0,60));
+        if(titles.size>=12)break;
+      }
+      if(titles.size>=12)break;
+    }
+  }
+  return {start:range.start,end,aiAllowed,titles:[...titles],
+    revision:app.revision+'|'+day};
+}
+function openReviewCalendar(start){
+  $('sub-dialog').close();
+  selected=start;
+  view=date(start);
+  page='calendar';
+  render();
+  document.querySelector('[data-date="'+start+'"]')?.focus();
 }
 let checkingReminder=false;
-async function maybeHabitReminder(){
+async function maybeMonthlyReminder(){
   const busy=()=>page==='diary'||document.hidden||['event-dialog','day-dialog','sub-dialog'].some(id=>$(id).open);
-  if(!storeReady||!aiClient.enabled||checkingReminder||busy()||!app.settings.aiEnabled||app.settings.monthReminder===false)return;
-  const day=readToday(), current=R.statsRange('month',day);
-  const month=day===current.end?'current':'previous';
-  const target=month==='current'?day.slice(0,7):R.addDays(current.start,-1).slice(0,7);
-  if((app.settings.lastHabitReminder||'')>=target||(!habitSnapshot(month).total&&month==='previous'))return;
+  if(!storeReady||checkingReminder||busy()||!(app.settings.monthReminder??app.settings.aiEnabled))return;
+  const day=readToday(), {end}=R.statsRange('month',day);
+  const target=day.slice(0,7);
+  if(day!==end||(app.settings.lastHabitReminder||'')>=target)return;
   checkingReminder=true;
   try{
     await transaction(data=>{
-      if(busy()||!data.settings.aiEnabled||data.settings.monthReminder===false||(data.settings.lastHabitReminder||'')>=target){
+      if(busy()||!(data.settings.monthReminder??data.settings.aiEnabled)||(data.settings.lastHabitReminder||'')>=target){
         throw Error('reminder no longer needed');
       }
       data.settings.lastHabitReminder=target;
     });
-    if(!busy())aiClient.remind(month);
+    if(!busy())aiClient.review('current',true);
   }catch{}finally{checkingReminder=false}
 }
 function handleStatsButton(node){
@@ -352,7 +363,7 @@ function openEditor(id=null,initialType='up',suggestion=null,expected=null){
   drawEditor();
   openModal($('event-dialog'));
 }
-function drawEditor(error='',fieldError=false){const previousScroll=$('event-form')?.querySelector('.type-tabs').scrollLeft||0;const birthday=draft.type==='birthday',locked=!!editingId&&typeLocked(app.events.find(e=>e.id===editingId));$('event-dialog').innerHTML='<form id="event-form" data-theme="'+draft.type+'" novalidate><header class="dialog-header"><button type="button" class="icon-button text-button" data-action="cancel-editor" aria-label="返回">'+icon('left')+'</button><h2 id="event-dialog-title">'+(editingId?'编辑事项':'新建事项')+'</h2><button type="button" class="text-button" data-action="cancel-editor">取消</button></header><div class="form-body"><div class="type-tabs" role="group" aria-label="事项类型">'+Object.entries(types).map(([t,label])=>'<button type="button" class="'+(t===draft.type?'active ':'')+t+'" data-type="'+t+'" '+(locked&&t!==draft.type?'disabled title="开始日期已过，从第二天起不可更改类型"':'')+' aria-pressed="'+(t===draft.type)+'">'+label+'</button>').join('')+'</div>'+(locked?'<p class="demo-note">开始日期已过，从第二天起不可更改类型。</p>':'')+'<div class="form-field"><label for="event-name">名称</label><input id="event-name" name="title" placeholder="请输入事项名称" value="'+esc(draft.title)+'" aria-invalid="'+fieldError+'" '+(fieldError?'aria-describedby="name-error"':'')+'>'+(fieldError?'<span class="field-error" id="name-error">请填写事项名称</span>':'')+'</div>'+(birthday?'<div class="form-field"><label for="calendar-type">日期类型</label><select id="calendar-type" name="calendarType"><option value="solar" '+(draft.calendarType==='solar'?'selected':'')+'>公历</option><option value="lunar" '+(draft.calendarType==='lunar'?'selected':'')+'>农历（换算待接入）</option></select></div>':'')+'<div class="form-field"><span class="form-label">'+(birthday?'生日日期':draft.type==='down'?'目标日期':draft.type==='normal'?'日期':'开始日期')+'</span><button type="button" class="field-button" data-action="date-picker">'+esc(fmt(draft.date))+icon('right')+'</button></div>'+(draft.type!=='up'?'<div class="form-field"><span class="form-label">循环</span><button type="button" class="field-button" data-action="repeat-picker" '+(birthday?'disabled':'')+'>'+esc(recurrenceLabel(draft))+(!birthday?icon('right'):'')+'</button></div>':'')+(draft.type!=='up'?'<div class="form-field"><span class="form-label">持续次数</span><button type="button" class="field-button" data-action="duration-picker" '+(draft.recurrence.frequency==='once'?'disabled':'')+'>'+(draft.recurrence.frequency==='once'?'1 次':draft.endCondition?draft.endCondition+' 次':'不设结束')+'</button></div>':'')+'<div class="field-hint">'+typeHints[draft.type]+'</div><div class="ai-field"><div><strong>参与 AI 习惯分析</strong><small>'+(aiClient.enabled?'开启后可纳入 AI 习惯回顾':'仅保存开关，AI服务尚未接入')+'</small></div><label class="switch"><input type="checkbox" name="aiIncluded" aria-label="此事项参与AI分析" '+(draft.aiIncluded?'checked':'')+'><span></span></label></div><div class="form-field"><label for="event-note">备注</label><textarea id="event-note" name="note" placeholder="选填">'+esc(draft.note)+'</textarea></div>'+(error?'<div class="save-error" role="alert">'+esc(error)+'</div>':'')+'</div><footer class="dialog-footer"><button class="event-save" type="submit" '+(saving?'disabled':'')+'>'+(saving?'保存中…':error&&!fieldError?'重试保存':editingId?'保存修改':'保存')+'</button></footer></form>';$('event-form').querySelector('.type-tabs').scrollLeft=previousScroll;if(saving)$('event-form').querySelectorAll('input,textarea,select,button').forEach(x=>x.disabled=true)}
+function drawEditor(error='',fieldError=false){const previousScroll=$('event-form')?.querySelector('.type-tabs').scrollLeft||0;const birthday=draft.type==='birthday',locked=!!editingId&&typeLocked(app.events.find(e=>e.id===editingId));$('event-dialog').innerHTML='<form id="event-form" data-theme="'+draft.type+'" novalidate><header class="dialog-header"><button type="button" class="icon-button text-button" data-action="cancel-editor" aria-label="返回">'+icon('left')+'</button><h2 id="event-dialog-title">'+(editingId?'编辑事项':'新建事项')+'</h2><button type="button" class="text-button" data-action="cancel-editor">取消</button></header><div class="form-body"><div class="type-tabs" role="group" aria-label="事项类型">'+Object.entries(types).map(([t,label])=>'<button type="button" class="'+(t===draft.type?'active ':'')+t+'" data-type="'+t+'" '+(locked&&t!==draft.type?'disabled title="开始日期已过，从第二天起不可更改类型"':'')+' aria-pressed="'+(t===draft.type)+'">'+label+'</button>').join('')+'</div>'+(locked?'<p class="demo-note">开始日期已过，从第二天起不可更改类型。</p>':'')+'<div class="form-field"><label for="event-name">名称</label><input id="event-name" name="title" placeholder="请输入事项名称" value="'+esc(draft.title)+'" aria-invalid="'+fieldError+'" '+(fieldError?'aria-describedby="name-error"':'')+'>'+(fieldError?'<span class="field-error" id="name-error">请填写事项名称</span>':'')+'</div>'+(birthday?'<div class="form-field"><label for="calendar-type">日期类型</label><select id="calendar-type" name="calendarType"><option value="solar" '+(draft.calendarType==='solar'?'selected':'')+'>公历</option><option value="lunar" '+(draft.calendarType==='lunar'?'selected':'')+'>农历（换算待接入）</option></select></div>':'')+'<div class="form-field"><span class="form-label">'+(birthday?'生日日期':draft.type==='down'?'目标日期':draft.type==='normal'?'日期':'开始日期')+'</span><button type="button" class="field-button" data-action="date-picker">'+esc(fmt(draft.date))+icon('right')+'</button></div>'+(draft.type!=='up'?'<div class="form-field"><span class="form-label">循环</span><button type="button" class="field-button" data-action="repeat-picker" '+(birthday?'disabled':'')+'>'+esc(recurrenceLabel(draft))+(!birthday?icon('right'):'')+'</button></div>':'')+(draft.type!=='up'?'<div class="form-field"><span class="form-label">持续次数</span><button type="button" class="field-button" data-action="duration-picker" '+(draft.recurrence.frequency==='once'?'disabled':'')+'>'+(draft.recurrence.frequency==='once'?'1 次':draft.endCondition?draft.endCondition+' 次':'不设结束')+'</button></div>':'')+'<div class="field-hint">'+typeHints[draft.type]+'</div><div class="ai-field"><div><strong>可用于 AI 补记提示</strong><small>'+(aiClient.enabled?'仅在你请求补记线索时使用事项名称':'仅保存开关，AI服务尚未接入')+'</small></div><label class="switch"><input type="checkbox" name="aiIncluded" aria-label="允许此事项用于 AI 补记提示" '+(draft.aiIncluded?'checked':'')+'><span></span></label></div><div class="form-field"><label for="event-note">备注</label><textarea id="event-note" name="note" placeholder="选填">'+esc(draft.note)+'</textarea></div>'+(error?'<div class="save-error" role="alert">'+esc(error)+'</div>':'')+'</div><footer class="dialog-footer"><button class="event-save" type="submit" '+(saving?'disabled':'')+'>'+(saving?'保存中…':error&&!fieldError?'重试保存':editingId?'保存修改':'保存')+'</button></footer></form>';$('event-form').querySelector('.type-tabs').scrollLeft=previousScroll;if(saving)$('event-form').querySelectorAll('input,textarea,select,button').forEach(x=>x.disabled=true)}
 function sub(title,body){$('sub-dialog').innerHTML='<header class="dialog-header"><h2 id="sub-title">'+title+'</h2><button class="icon-button text-button" data-action="close-sub" aria-label="关闭">'+icon('close')+'</button></header><div class="sub-body">'+body+'</div>';if(!$('sub-dialog').open)$('sub-dialog').showModal()}
 const option=(label,value,selectedValue)=>'<button class="option-row '+(value===selectedValue?'selected':'')+'" data-frequency="'+value+'">'+label+'<span class="radio"></span></button>';
 function repeatPicker(){sub('循环方式',[['once','仅一次'],['daily','每天'],['weekly','每周'],['monthly','每月'],['yearly','每年'],['workdays','仅工作日'],['weekends','仅周末']].map(([v,t])=>option(t,v,draft.recurrence.frequency)).join('')+'<p class="scope-note">仅工作日按中国法定节假日与调休计算，已接入 2026 年数据，后续年份每年更新。</p>')}
@@ -674,7 +685,10 @@ document.addEventListener('click',e=>{const node=e.target.closest('button,[data-
   return;
 }if(node.dataset.frequency){frequency(node.dataset.frequency);return}if(node.dataset.weekday){node.classList.toggle('selected');node.setAttribute('aria-pressed',node.classList.contains('selected'));return}
  const action=node.dataset.action;if(!action)return;const v=view;
- if(action==='open-diary'){
+ if(action==='monthly-review'){
+  if(storeReady)aiClient.review();
+  else notify(storageIssue||'正在读取本地数据，请稍候。');
+ }else if(action==='open-diary'){
   if(!storeReady){notify(storageIssue||'正在读取本地数据，请稍候。');return;}
   $('day-dialog').close();
   diary.open(selected);
@@ -693,7 +707,6 @@ document.addEventListener('change',async event=>{
     await transaction(data=>{
       if(input.id==='global-ai'){
         data.settings.aiEnabled=input.checked;
-        if(input.checked)data.settings.monthReminder??=true;
       }else data.settings.monthReminder=input.checked;
     });
     render();
@@ -705,10 +718,10 @@ document.addEventListener('change',async event=>{
   }
 });
 $('event-dialog').addEventListener('submit',e=>{e.preventDefault();save()});$('event-dialog').addEventListener('cancel',e=>{e.preventDefault();if($('event-form'))cancelEditor();else closeModal($('event-dialog'))});$('event-dialog').addEventListener('click',e=>{if(e.target===$('event-dialog')){if($('event-form'))cancelEditor();else closeModal($('event-dialog'))}});$('sub-dialog').addEventListener('cancel',e=>{if(deleting)e.preventDefault()});$('sub-dialog').addEventListener('click',e=>{if(!deleting&&e.target===$('sub-dialog'))$('sub-dialog').close()});$('header-add').onclick=openCreation;$('mobile-add').onclick=openCreation;
-$('event-dialog').addEventListener('close',releaseEditLock);setInterval(()=>{const next=iso(new Date());if(next!==today){today=next;if(!$('event-dialog').open)render()}maybeHabitReminder()},30000);window.addEventListener('pagehide',releaseEditLock);
+$('event-dialog').addEventListener('close',releaseEditLock);setInterval(()=>{const next=iso(new Date());if(next!==today){today=next;if(!$('event-dialog').open)render()}maybeMonthlyReminder()},30000);window.addEventListener('pagehide',releaseEditLock);
 const preview=window.WanshiliPreview({open:sub,rerender:render});
 const aiClient=window.WanshiliAI({open:sub,openDraft:openAIDraft,prepareDraft:prepareAIDraft,matches:matchCalendar,
-  openMatch:openAIMatch,habitSnapshot,readToday});
+  openMatch:openAIMatch,monthlyReview,openReviewCalendar,readToday});
 const diary=window.WanshiliDiary({
   content:$('page-content'),dialog:$('sub-dialog'),openDialog:sub,
   show:()=>{page='diary';render();window.scrollTo(0,0)},
@@ -730,8 +743,8 @@ const diary=window.WanshiliDiary({
   fmt,icon,escape:esc,validDay:R.validDay,ai:aiClient.enabled?aiClient.diary:null,
   aiAvailable:aiClient.diaryAvailable,attachDictation:aiClient.attachDictation,notify
 });
-window.addEventListener('pageshow',maybeHabitReminder);
-document.addEventListener('visibilitychange',maybeHabitReminder);
+window.addEventListener('pageshow',maybeMonthlyReminder);
+document.addEventListener('visibilitychange',maybeMonthlyReminder);
 window.WanshiliApp={rules:R,occurrence,summary,get data(){return JSON.parse(JSON.stringify(app))},get selected(){return selected},get today(){return today},render};
 render();
 store.initialize().then(data=>{
@@ -739,7 +752,7 @@ store.initialize().then(data=>{
   storeReady=true;
   render();
   if(location.hash==='#new-normal')openEditor(null,'normal');
-  else maybeHabitReminder();
+  else maybeMonthlyReminder();
 }).catch(error=>{
   storageIssue=error.message||'本地存储暂不可用，原数据已保留。';
   render();

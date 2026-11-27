@@ -46,5 +46,5 @@
 | --- | --- | --- | --- |
 | AI 语音 | [加号 → AI 语音](https://yushumeng532.github.io/wanshili/?screen=v06%3Avoice#prd) | [语音](https://www.figma.com/proto/8aE2Z9hUhKtxgXjnEuCY7I?node-id=230-850&page-id=230%3A847&starting-point-node-id=230%3A850) | [AI 语音创建和管理日程](./prd.md#7-ai-语音创建和管理日程p0) |
 | 统计 | [选择范围和日程明细](https://yushumeng532.github.io/wanshili/?screen=v06%3Amonth_category#prd) | [统计](https://www.figma.com/proto/8aE2Z9hUhKtxgXjnEuCY7I?node-id=230-2255&page-id=230%3A847&starting-point-node-id=230%3A2255) | [统计](./prd.md#5-统计) |
-| 习惯回顾 | [月末提醒 → 查看回顾](https://yushumeng532.github.io/wanshili/?screen=v06%3AmonthStart#prd) | [习惯回顾](https://www.figma.com/proto/8aE2Z9hUhKtxgXjnEuCY7I?node-id=230-1997&page-id=230%3A847&starting-point-node-id=230%3A1997) | [月末习惯回顾](./prd.md#8-月末习惯回顾p0) |
+| 历史原型 · 习惯回顾 | [月末提醒 → 查看回顾](https://yushumeng532.github.io/wanshili/?screen=v06%3AmonthStart#prd) | [习惯回顾](https://www.figma.com/proto/8aE2Z9hUhKtxgXjnEuCY7I?node-id=230-1997&page-id=230%3A847&starting-point-node-id=230%3A1997) | [当前月末补记规则](./prd.md#8-月末补记p0) |
 | 账号及云同步 | [登录、注册与同步](https://yushumeng532.github.io/wanshili/?screen=v06%3Alogin#prd) | [账号](https://www.figma.com/proto/8aE2Z9hUhKtxgXjnEuCY7I?node-id=235-6831&page-id=230%3A847&starting-point-node-id=235%3A6831) | [注册与登录](./prd.md#9-注册登录与账号归属p1) · [MySQL 保存](./prd.md#10-mysql-保存与版本兼容p1) |
