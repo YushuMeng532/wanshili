@@ -87,9 +87,10 @@ function calendarCell(day,month) {
 function dayFestivals(day) {
   const festivals=F.forDate(day);
   if(!festivals.length)return '';
-  return '<section class="day-festivals" aria-label="当天节日">'+festivals.map(({name,category})=>
+  return '<section class="day-festivals" aria-label="当天节日与节气">'+festivals.map(({name,category})=>
     '<div class="festival-detail '+category+'"><strong>'+esc(name)+'</strong><small>'+
-    (category==='china'?'中国节日':'国际节日')+'</small></div>').join('')+'</section>';
+    (name==='清明节'?'中国节日 · 节气':{'china':'中国节日','international':'国际节日','solar-term':'节气'}[category])+
+    '</small></div>').join('')+'</section>';
 }
 function calendar(){
  const y=view.getFullYear(),m=view.getMonth(),first=new Date(y,m,1,12),offset=(first.getDay()+6)%7;

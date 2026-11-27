@@ -34,21 +34,6 @@
     '12-25': ['圣诞节']
   };
 
-  // April day of Qingming for 1900–2100, generated using lunar-javascript 1.7.8 (MIT).
-  // https://github.com/6tail/lunar-javascript
-  // Spot-checked against the Hong Kong Observatory's Gregorian–Lunar tables.
-  const qingmingAprilDays = [
-    '5566556655665556555655565',
-    '5565556555655565556555555',
-    '5555555555555555555555555',
-    '5455545554555455545554555',
-    '4555455544554455445544554',
-    '4554455445544554445444544',
-    '4544454445444544454445444',
-    '4444444444444444444444444',
-    '5',
-  ].join('');
-
   // Gregorian computus, used for the Western observance of Easter.
   function easter(year) {
     const golden = year % 19;
@@ -71,9 +56,10 @@
     if (!year) return [];
     const china = [];
     const international = [];
+    const solarTerm = root.WanshiliSolarTerms.forDay(year, month, day);
     const fixedChina = chinaDates[date.slice(5)];
     if (fixedChina) china.push(fixedChina);
-    if (month === 4 && day === Number(qingmingAprilDays[year - 1900])) china.push('清明节');
+    if (solarTerm === '清明') china.push('清明节');
 
     const lunarCalendar = root.WanshiliLunar;
     const lunar = lunarCalendar?.solarToLunar(date);
@@ -97,10 +83,14 @@
     if (month === 6 && weekday === 0 && week === 3) international.push(['父亲节']);
     if (month === 11 && weekday === 4 && week === 4) international.push(['感恩节（美国）', '感恩节']);
 
-    return [
+    const labels = [
       ...china.map(name => ({ name, shortName: name, category: 'china' })),
       ...international.map(([name, shortName = name]) => ({ name, shortName, category: 'international' }))
     ];
+    if (solarTerm && solarTerm !== '清明') {
+      labels.push({ name: solarTerm, shortName: solarTerm, category: 'solar-term' });
+    }
+    return labels;
   }
 
   root.WanshiliFestivals = { forDate };
