@@ -31,10 +31,10 @@
     return null;
   }
 
-  window.WanshiliAI = function ({ open, openDraft, prepareDraft, matches, openMatch, habitSnapshot, readToday }) {
+  window.WanshiliAI = function ({ open, openDraft, prepareDraft, matches, openMatch, monthlyReview, openReviewCalendar, readToday }) {
     const endpoint = configuredEndpoint(window.WANSHILI_AI_ENDPOINT);
     const dialog = document.getElementById('sub-dialog');
-    let pending, recognition, activeHabit;
+    let pending, recognition, activeReview;
 
     function cancelWork() {
       pending?.abort();
@@ -50,7 +50,7 @@
 
     function show(title, html) {
       cancelWork();
-      activeHabit = undefined;
+      activeReview = undefined;
       open(title, html);
       return dialog.querySelector('.sub-body');
     }
@@ -330,49 +330,56 @@
       }
     }
 
-    function habit(month = 'current') {
-      const snapshot = habitSnapshot(month);
-      const title = (month === 'previous' ? '上月' : '本月') + '习惯回顾';
-      const panel = show(title,
-        '<div class="sub-actions"><button type="button" data-ai-month="current">本月</button>' +
-        '<button type="button" data-ai-month="previous">上月</button></div>' +
-        (snapshot.enabled ? '<div class="preview-sample"><strong>共 ' + snapshot.total + ' 天有日程</strong><p>' +
-          escape(snapshot.start + ' 至 ' + snapshot.end) + '</p><p>' +
-          Object.entries(snapshot.counts).map(([type, count]) => typeNames[type] + ' ' + count + ' 天').join(' · ') +
-          '</p></div>' : '<p>先在「我的」开启 AI 习惯分析，再为希望纳入的日程打开参与开关。</p>') +
-        '<p>点「生成 AI 总结」后，仅将统计区间和天数发送给 AI 助手。</p>' +
+    function review(month = 'current', reminded = false) {
+      const snapshot = monthlyReview(month);
+      const {start,end,aiAllowed,titles} = snapshot;
+      const monthLabel = start.slice(0,4) + ' 年 ' + Number(start.slice(5,7)) + ' 月';
+      const panel = show('月末补记',
+        '<div class="sub-actions" role="group" aria-label="补记月份">' +
+        '<button type="button" data-ai-month="current" aria-pressed="' + (month === 'current') + '">本月</button>' +
+        '<button type="button" data-ai-month="previous" aria-pressed="' + (month === 'previous') + '">上月</button></div>' +
+        '<div class="preview-sample"><strong>' + escape(monthLabel) + '</strong>' +
+        '<p>有做过但还没记的事吗？打开月历，选择日期后补记。</p></div>' +
         '<p role="status" aria-live="polite" data-ai-status></p>' +
-        '<div class="sub-actions"><button class="primary" type="button" data-ai-generate ' +
-        (!snapshot.enabled || !snapshot.total ? 'disabled' : '') + '>生成 AI 总结</button></div>');
-      for (const button of panel.querySelectorAll('[data-ai-month]')) button.onclick = () => habit(button.dataset.aiMonth);
-      const button = panel.querySelector('[data-ai-generate]');
+        (aiAllowed && titles.length
+          ? '<p>获取 AI 线索会发送 ' + titles.length + ' 个已授权的普通日程名称。</p>' +
+            '<div class="sub-actions"><button type="button" data-ai-cues>获取 AI 补记线索</button></div>'
+          : aiAllowed ? '<p>本月没有可用于 AI 线索的已授权事项。你仍可直接查看月历。</p>' : '') +
+        '<div class="sub-actions"><button type="button" data-action="close-sub">' +
+        (reminded ? '稍后查看' : '关闭') + '</button>' +
+        '<button class="primary" type="button" data-review-calendar>查看月历</button></div>');
+      for (const button of panel.querySelectorAll('[data-ai-month]')) {
+        button.onclick = () => review(button.dataset.aiMonth);
+      }
+      panel.querySelector('[data-review-calendar]').onclick = () => openReviewCalendar(start);
+      activeReview = { panel, month, revision: snapshot.revision };
+      const button = panel.querySelector('[data-ai-cues]');
+      if (!button) return;
       const status = panel.querySelector('[data-ai-status]');
-      activeHabit = { panel, month, revision: snapshot.revision };
       button.onclick = async () => {
-        const { start, end, total, counts } = snapshot;
-        if (snapshot.revision !== habitSnapshot(month).revision) return habit(month);
-        const result = await call('/api/habit', { start, end, total, counts }, panel, button, status);
+        if (snapshot.revision !== monthlyReview(month).revision) return review(month);
+        const result = await call('/api/reminder', { titles }, panel, button, status);
         if (!result) return;
-        if (snapshot.revision !== habitSnapshot(month).revision) return habit(month);
-        status.textContent = result.summary;
+        if (snapshot.revision !== monthlyReview(month).revision) return review(month);
+        const names = Array.isArray(result.indices)
+          ? [...new Set(result.indices)].filter(index => Number.isInteger(index) && index >= 0 && index < titles.length).slice(0,2)
+            .map(index => '「' + titles[index] + '」')
+          : [];
+        const period = labelDate(start) + '至' + labelDate(end);
+        status.textContent = names.length
+          ? '可以回想一下' + period + '，有没有做过' + names.join('、') + '但还没记的日子。'
+          : '可以打开月历，回想这段时间有没有想补记的日程。';
       };
-    }
-
-    function remind(month) {
-      const panel = show('月末习惯回顾', '<p>可以查看' + (month === 'previous' ? '上月' : '本月') +
-        '已授权日程的安排。</p><div class="sub-actions"><button type="button" data-action="close-sub">稍后查看</button>' +
-        '<button class="primary" type="button" data-ai-view>查看回顾</button></div>');
-      panel.querySelector('[data-ai-view]').onclick = () => habit(month);
     }
 
     function privacy() {
       show('隐私说明', '<p>日程和偏好保存在当前浏览器。AI 录入只发送你确认的文字、日期和时区，已有日程在本机查找。听写由浏览器的语音服务处理。</p>' +
-        '<p>生成习惯总结时，只向 AI 助手 发送授权日程的分类天数与日期区间。退出后可随时在「我的」关闭分析。</p>');
+        '<p>月末提醒在本机显示。只有点击「获取 AI 补记线索」才会发送已授权的普通日程名称。可以随时在「我的」关闭 AI 补记提示。</p>');
     }
 
     function recheck() {
-      if (activeHabit?.panel.isConnected && dialog.open &&
-          habitSnapshot(activeHabit.month).revision !== activeHabit.revision) habit(activeHabit.month);
+      if (activeReview?.panel.isConnected && dialog.open &&
+          monthlyReview(activeReview.month).revision !== activeReview.revision) review(activeReview.month);
     }
 
     function diary(mode, text, day, panel, submit, status) {
@@ -390,6 +397,6 @@
       }
     }
 
-    return { enabled: Boolean(endpoint), voice, habit, remind, privacy, recheck, diary, diaryAvailable, attachDictation };
+    return { enabled: Boolean(endpoint), voice, review, privacy, recheck, diary, diaryAvailable, attachDictation };
   };
 })();
