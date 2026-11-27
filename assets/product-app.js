@@ -197,15 +197,27 @@ function openCreation(){
       profileRow('sparkle','AI 语音','查看中文语音录入示例','data-preview="voice"'))+'</div>');
 }
 const readToday=()=>iso(new Date());
+function prepareAIDraft(plan){
+  if(!R.validDay(plan.date)||!Object.hasOwn(types,plan.type))return null;
+  const frequency=plan.type==='up'?'none':plan.repeat;
+  const recurrence={frequency,weekdays:plan.weekdays};
+  if(frequency==='monthly'&&plan.monthDay)recurrence.monthDay=plan.monthDay;
+  const draft={...plan,recurrence};
+  if(plan.nextEligible){
+    const trial={...draft,calendarType:'solar',endCondition:null};
+    for(let i=0;i<367;i++){
+      const day=R.addDays(plan.date,i);
+      if(R.occurrence(trial,day))return {...draft,date:day};
+    }
+    return null;
+  }
+  return R.leapDay(plan.date)?null:draft;
+}
 function openAIDraft(plan){
-  if(!R.validDay(plan.date)||R.leapDay(plan.date))return;
-  const type=Object.hasOwn(types,plan.type)?plan.type:'normal';
-  const frequency=type==='up'?'none':plan.repeat;
   $('sub-dialog').close();
-  openEditor(null,type,{
-    title:plan.title,date:plan.date,
-    recurrence:{frequency,weekdays:plan.weekdays},
-    endCondition:frequency==='once'?1:plan.occurrences
+  openEditor(null,plan.type,{
+    title:plan.title,date:plan.date,recurrence:plan.recurrence,
+    endCondition:plan.type==='up'?null:plan.repeat==='once'?1:plan.occurrences
   });
 }
 function matchCalendar(plan){
@@ -695,7 +707,7 @@ document.addEventListener('change',async event=>{
 $('event-dialog').addEventListener('submit',e=>{e.preventDefault();save()});$('event-dialog').addEventListener('cancel',e=>{e.preventDefault();if($('event-form'))cancelEditor();else closeModal($('event-dialog'))});$('event-dialog').addEventListener('click',e=>{if(e.target===$('event-dialog')){if($('event-form'))cancelEditor();else closeModal($('event-dialog'))}});$('sub-dialog').addEventListener('cancel',e=>{if(deleting)e.preventDefault()});$('sub-dialog').addEventListener('click',e=>{if(!deleting&&e.target===$('sub-dialog'))$('sub-dialog').close()});$('header-add').onclick=openCreation;$('mobile-add').onclick=openCreation;
 $('event-dialog').addEventListener('close',releaseEditLock);setInterval(()=>{const next=iso(new Date());if(next!==today){today=next;if(!$('event-dialog').open)render()}maybeHabitReminder()},30000);window.addEventListener('pagehide',releaseEditLock);
 const preview=window.WanshiliPreview({open:sub,rerender:render});
-const aiClient=window.WanshiliAI({open:sub,openDraft:openAIDraft,matches:matchCalendar,
+const aiClient=window.WanshiliAI({open:sub,openDraft:openAIDraft,prepareDraft:prepareAIDraft,matches:matchCalendar,
   openMatch:openAIMatch,habitSnapshot,readToday});
 const diary=window.WanshiliDiary({
   content:$('page-content'),dialog:$('sub-dialog'),openDialog:sub,

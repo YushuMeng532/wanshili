@@ -4,7 +4,7 @@
   const escape = value => String(value ?? '').replace(/[&<>"']/g, c =>
     ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
   const typeNames = { normal: '普通日程', up: '正计时', down: '倒数日', birthday: '生日' };
-  const repeatNames = { once: '仅一次', daily: '每天', weekly: '每周', monthly: '每月', yearly: '每年', weekends: '仅周末' };
+  const repeatNames = { once: '仅一次', daily: '每天', weekly: '每周', monthly: '每月', yearly: '每年', workdays: '仅工作日（含调休）', weekends: '仅周末' };
   const labels = { find: '查看', move: '改期', cancel: '删除', end: '结束正计时' };
   const labelDate = day => new Intl.DateTimeFormat('zh-CN', {
     timeZone: 'UTC', dateStyle: 'full'
@@ -31,7 +31,7 @@
     return null;
   }
 
-  window.WanshiliAI = function ({ open, openDraft, matches, openMatch, habitSnapshot, readToday }) {
+  window.WanshiliAI = function ({ open, openDraft, prepareDraft, matches, openMatch, habitSnapshot, readToday }) {
     const endpoint = configuredEndpoint(window.WANSHILI_AI_ENDPOINT);
     const dialog = document.getElementById('sub-dialog');
     let pending, recognition, activeHabit;
@@ -265,10 +265,10 @@
         const text = input.value.trim();
         if (!text || pending || recognition) return;
         const today = readToday();
-        const result = await call('/api/plan', {
-          text, today, timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'
-        }, panel, submit, status);
-        if (!result) return;
+        const args = { text, today, timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC' };
+        const raw = await call('/api/plan', args, panel, submit, status);
+        if (!raw) return;
+        const result = window.WanshiliScheduleIntent.refinePlan(raw, args);
         if (today !== readToday() || input.value.trim() !== text) {
           status.textContent = '日期或文字已变化，请再次解析。';
           return;
@@ -277,17 +277,25 @@
           status.textContent = result.message;
           return;
         }
-        if (result.action === 'create') confirmDraft(result, text, today);
-        else selectExisting(result, text, today);
+        if (result.action === 'create') {
+          const draft = prepareDraft(result);
+          if (draft) confirmDraft(draft, text, today);
+          else status.textContent = '请核对日程类型、日期和循环条件后重试。';
+        } else selectExisting(result, text, today);
       });
     }
 
     function confirmDraft(result, text, today) {
       const type = typeNames[result.type] || typeNames.normal;
-      const recurrence = result.type === 'up' ? '' : ' · ' + (repeatNames[result.repeat] || repeatNames.once);
+      let repeat = repeatNames[result.repeat] || repeatNames.once;
+      if (result.repeat === 'weekly' && result.weekdays?.length) repeat += ' · ' + result.weekdays.map(day => '周' + '一二三四五六日'[day - 1]).join('、');
+      if (result.repeat === 'monthly' && result.monthDay) repeat = result.monthDay === 31 ? '每月最后一天' : '每月' + result.monthDay + '日';
+      if (result.occurrences && result.repeat !== 'once') repeat += ' · 共' + result.occurrences + '次';
+      const recurrence = result.type === 'up' ? '' : ' · ' + repeat;
+      const dateText = (result.type === 'up' ? '起始日 ' : result.type === 'down' ? '目标日 ' : result.nextEligible ? '首次 ' : '') + labelDate(result.date);
       const panel = show('核对日程草稿',
         '<div class="preview-sample"><strong>' + escape(result.title) + '</strong><p>' +
-        escape(type + ' · ' + labelDate(result.date) + recurrence) + '</p></div>' +
+        escape(type + ' · ' + dateText + recurrence) + '</p></div>' +
         (result.hasTime ? '<p>万事历目前按日期保存。确认后只带入日期。</p>' : '') +
         '<div class="sub-actions"><button type="button" data-ai-back>返回文字</button>' +
         '<button class="primary" type="button" data-ai-confirm>带入表单</button></div>');
