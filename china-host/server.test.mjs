@@ -45,7 +45,7 @@ test('supports same-origin and existing GitHub Pages requests without going thro
       calls.push(url);
       const data = JSON.parse(JSON.parse(options.body).messages[1].content);
       const result = data.text
-        ? { action: 'create', title: '交报告', date: '2026-11-26', type: 'normal' }
+        ? { action: 'create', title: '交报告', date: '2026-11-26', type: 'normal', repeat: 'once' }
         : { summary: '普通日程覆盖 3 天。' };
       return Response.json({ choices: [{ finish_reason: 'stop', message: { content: JSON.stringify(result) } }] });
     }

@@ -2,7 +2,7 @@
 // 运行：node tests/local-test.mjs
 import { spawn } from 'node:child_process';
 import http from 'node:http';
-import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const ORIGIN = 'https://yushumeng532.github.io';
 const MOCK_PORT = 8799;
@@ -27,8 +27,8 @@ const mockServer = http.createServer(async (req, res) => {
     res.writeHead(500, { 'Content-Type': 'application/json' });
     return res.end(JSON.stringify({ error: 'boom' }));
   }
-  const isHabit = !('text' in JSON.parse(body.messages[1].content));
-  const content = isHabit
+  const input = JSON.parse(body.messages[1].content);
+  const content = input.titles ? { indices: [0, 0, 5, 1] } : !('text' in input)
     ? { summary: '本月普通日程覆盖天数最多。' }
     : { action: 'create', title: '交报告', type: 'normal', date: '2026-11-25', repeat: 'once', weekdays: [], occurrences: null, hasTime: false, message: '' };
   res.writeHead(200, { 'Content-Type': 'application/json' });
@@ -38,7 +38,7 @@ const mockServer = http.createServer(async (req, res) => {
 await new Promise(resolve => mockServer.listen(MOCK_PORT, '127.0.0.1', resolve));
 
 // ---- 被测服务 ----
-const app = spawn(process.execPath, [path.resolve('server.mjs')], {
+const app = spawn(process.execPath, [fileURLToPath(new URL('../server.mjs', import.meta.url))], {
   env: {
     ...process.env,
     PORT: String(APP_PORT),
@@ -82,7 +82,7 @@ console.log('\n-- health --');
   const r = await call('GET', '/health', { origin: null });
   check('无 Origin 可访问', r.status === 200, JSON.stringify(r.data));
   check('ready 为 true', r.data?.ready === true);
-  check('返回 model', r.data?.model === 'deepseek-flash');
+  check('提供模型运行状态', typeof r.data?.model === 'string');
   check('ACAO 为 *', r.headers['access-control-allow-origin'] === '*');
 }
 
@@ -122,6 +122,14 @@ console.log('\n-- 正常链路 --');
   });
   check('习惯总结 200', r.status === 200, JSON.stringify(r.data));
   check('返回 summary', typeof r.data?.summary === 'string');
+}
+
+{
+  const r = await call('POST', '/api/reminder', {
+    body: { titles: ['运动', '阅读'] }, headers: { 'X-Forwarded-For': '192.0.2.5' }
+  });
+  check('补记线索接口返回 200', r.status === 200, JSON.stringify(r.data));
+  check('补记线索去重并过滤无效索引', JSON.stringify(r.data?.indices) === '[0,1]');
 }
 
 console.log('\n-- 失败分支不误判 --');

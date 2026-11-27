@@ -1,4 +1,4 @@
-const assert=require('node:assert/strict');require('../assets/holidays.js');require('../assets/event-rules.js');const R=globalThis.WanshiliRules;let n=0;function check(v,label){assert.ok(v,label);n++}
+const assert=require('node:assert/strict');require('../assets/holidays.js');require('../assets/lunar.js');require('../assets/event-rules.js');const R=globalThis.WanshiliRules;let n=0;function check(v,label){assert.ok(v,label);n++}
 const make=(o={})=>({id:'e',title:'旧名称',type:'down',date:'2026-11-17',calendarType:'solar',recurrence:{frequency:'daily'},endCondition:null,...o});
 const up=R.normalize(make({type:'up'}));check(up.recurrence.frequency==='none'&&!up.endCondition,'纪念日不循环');check(R.label(up,'2026-11-17')==='第1天','起始日为第1天');check(R.label(up,'2026-11-20')==='第4天','跟随选中日期');check(!R.shown(up,'2026-11-16'),'起点之前不显示');check(R.marked(up,'2026-11-17')&&!R.marked(up,'2026-11-18'),'纪念日只标开始日');check(R.shown(up,'2026-11-18'),'下方仍显示累计');
 const down=make({date:'2026-11-21',recurrence:{frequency:'once'}});check(R.label(down,'2026-11-19')==='还有2天','选中日前倒数');check(R.label(down,'2026-11-21')==='就是今天','零日');check(R.label(down,'2026-11-22')==='已过1天','目标之后');check(!R.marked(down,'2026-11-19')&&R.shown(down,'2026-11-19'),'标记与列表分离');check(R.marked(down,'2026-11-21'),'归零日标记');
@@ -98,4 +98,42 @@ const consentDays=()=>R.summary([consent],R.datesInRange('2026-11-17','2026-11-2
 check(consentDays().length===0,'撤销授权后旧分段也不计入回顾');
 consent.aiIncluded=true;
 check(consentDays().length===7,'当前授权可涵盖仍保留的历史日程');
-console.log(JSON.stringify({passed:true,checks:n}));
+const L=globalThis.WanshiliLunar;
+assert.deepEqual(L.solarToLunar('2025-07-25'),{year:2025,month:6,day:1,isLeap:true,monthName:'闰六月',dayName:'初一'});
+assert.equal(L.lunarToSolar(2033,11,1,true),'2033-12-22');
+assert.equal(L.leapMonth(2026),0);
+assert.equal(L.solarToLunar('1900-01-30'),null);
+assert.equal(L.solarToLunar('2026-02-30'),null);
+assert.equal(L.lunarToSolar(2025,6,30,true),null);
+assert.equal(L.lunarToSolar(2101,1,1),null);
+const lastLunarMonth=L.monthsInYear(L.lastYear).at(-1);
+const endpoint=L.lunarToSolar(L.lastYear,lastLunarMonth.month,lastLunarMonth.days,lastLunarMonth.isLeap);
+for(const day of R.datesInRange('1900-01-31',endpoint)){
+  const {year,month,day:date,isLeap}=L.solarToLunar(day);
+  assert.equal(L.lunarToSolar(year,month,date,isLeap),day);
+}
+const lunarBirth=(year,month,day,leap=false)=>make({type:'birthday',calendarType:'lunar',date:L.lunarToSolar(year,month,day,leap),
+  lunar:{month,day,leap},recurrence:{frequency:'yearly',weekdays:[]},endCondition:null});
+const regularLunar=lunarBirth(2024,6,1);
+const leapLunar=lunarBirth(2025,6,1,true);
+check(!R.occurrence(leapLunar,'2025-06-25')&&R.marked(leapLunar,'2025-07-25'),'闰月生日仅在闰月当天显示');
+check(R.occurrence(leapLunar,'2026-07-14')&&R.shown(leapLunar,'2026-07-14'),'没有同号闰月时按平月');
+check(R.occurrence(leapLunar,'2033-06-27'),'有其他闰月时仍按本月平月');
+check(R.occurrence(regularLunar,'2025-06-25')&&!R.occurrence(regularLunar,'2025-07-25'),'平月生日当年只出现一次');
+const lunarFeb=lunarBirth(2024,1,20);
+check(R.occurrence(lunarFeb,'2024-02-29'),'农历生日可落在公历2月29日');
+check(!R.occurrence({...lunarFeb,calendarType:'solar'},'2024-02-29'),'公历生日仍跳过2月29日');
+const dayThirty=lunarBirth(2025,1,30);
+check(!R.occurrence(dayThirty,L.lunarToSolar(2033,1,29)),'小月无三十时不补记为廿九');
+assert.equal(R.label(leapLunar,'2026-07-14'),'农历六月初一');
+const sparseLunar=lunarBirth(2029,8,30);
+check(R.deletionScopes(sparseLunar,sparseLunar.date,R.addDays(sparseLunar.date,1)).series,
+  '小月连续缺日时仍可操作下一次有效年度计划');
+const shorter={...leapLunar,endCondition:1};
+check(R.occurrence(shorter,'2025-07-25')&&!R.occurrence(shorter,'2026-07-14'),'持续次数按每个有效农历生日计数');
+const birthdayStats=R.summary([leapLunar],R.datesInRange('2025-01-01','2026-07-14'),'2026-07-15');
+assert.deepEqual(birthdayStats.byType.birthday,['2025-07-25','2026-07-14']);
+const changed={...leapLunar};
+R.rewrite(changed,null,'one','2026-07-14','2026-07-13');
+check(!R.occurrence(changed,'2026-07-14')&&R.occurrence(changed,'2025-07-25'),'取消一次农历生日保留历史');
+console.log(JSON.stringify({passed:true,checks:n,lunarRoundTrips:R.diff(endpoint,'1900-01-31')+1}));
